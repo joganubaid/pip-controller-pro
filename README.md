@@ -19,33 +19,36 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 - **Configurable**: Adjustable transparency levels and check intervals
 - **Hotkeys**: Pause/resume and exit hotkeys included
 
-## Quick Start
+## 📥 Download & Install
 
-### Option 1: Build to Executable (Recommended)
+### 🔧 Option 1: Windows Installer (RECOMMENDED)
+**File:** [PiPControllerPro-v2.0.0-Setup.exe](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.0/PiPControllerPro-v2.0.0-Setup.exe) (2.22 MB)
 
-1. **Install AutoHotkey and Build**:
-   ```powershell
-   cd pip-controller
-   .\build.ps1 -InstallAHK -Build
-   ```
+✅ **Choose this if you want:**
+- Easy installation with setup wizard
+- Start Menu shortcuts
+- Windows integration
+- Automatic updates
 
-2. **Run the executable**:
-   ```powershell
-   .\pip-controller.exe
-   ```
+**How to install:**
+1. Download the installer
+2. Double-click to run
+3. Follow the setup wizard
+4. Done! Find it in Start Menu
 
-### Option 2: Run Script Directly
+### 📁 Option 2: Portable Version
+**File:** [PiPControllerPro-v2.0.0-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.0/PiPControllerPro-v2.0.0-Portable.zip) (604 KB)
 
-1. **Install AutoHotkey** (if not already installed):
-   ```powershell
-   .\build.ps1 -InstallAHK
-   ```
+✅ **Choose this if you want:**
+- No installation required
+- Run from USB drive
+- Portable software
+- Limited permissions
 
-2. **Run the script**:
-   ```powershell
-   # Right-click pip-controller.ahk and select "Compile Script"
-   # Or double-click the .ahk file to run it
-   ```
+**How to use:**
+1. Download and extract the ZIP
+2. Run `pip-controller.exe`
+3. Done! No installation needed
 
 ## Build Options
 
