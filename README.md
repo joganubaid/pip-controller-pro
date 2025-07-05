@@ -28,13 +28,13 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 - Easy installation with setup wizard
 - Start Menu shortcuts
 - Windows integration
-- Automatic updates
+- Professional uninstaller
 
-**How to install:**
-1. Download the installer
-2. Double-click to run
+**📥 How to install:**
+1. Click the download link above
+2. Double-click the downloaded installer
 3. Follow the setup wizard
-4. Done! Find it in Start Menu
+4. Done! Find "PiP Controller Pro" in Start Menu
 
 ### 📁 Option 2: Portable Version
 **File:** [PiPControllerPro-v2.0.0-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.0/PiPControllerPro-v2.0.0-Portable.zip) (604 KB)
@@ -43,14 +43,30 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 - No installation required
 - Run from USB drive
 - Portable software
-- Limited permissions
+- Limited system permissions
 
-**How to use:**
-1. Download and extract the ZIP
-2. Run `pip-controller.exe`
-3. Done! No installation needed
+**📥 How to use:**
+1. Click the download link above
+2. Extract the ZIP file anywhere
+3. Run `pip-controller.exe`
+4. Done! No installation needed
 
-## Build Options
+## 🚀 Quick Start Guide
+
+After installing or extracting:
+
+1. **Launch the app** - It will appear in your system tray
+2. **Open Chrome or Edge** and play any video (YouTube, Netflix, etc.)
+3. **Right-click the video** → Select "Picture in picture"
+4. **Hover over the PiP window** → Watch it become transparent! ✨
+5. **Hold Shift while hovering** → Makes it fully opaque and clickable
+6. **Right-click tray icon** → Access all settings and options
+
+### 🎮 Hotkeys
+- **Ctrl+Alt+P** - Pause/Resume transparency
+- **Ctrl+Alt+X** - Exit application
+
+## Build Options (For Developers)
 
 ```powershell
 # Show help
