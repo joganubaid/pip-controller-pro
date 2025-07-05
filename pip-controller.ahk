@@ -311,6 +311,7 @@ return
         TrayTip, PiP Controller, Script resumed, 2
 return
 
-^!x::ExitApp
-
+^!x::
 ExitApp
+
+ExitApp:
