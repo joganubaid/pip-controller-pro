@@ -1,0 +1,59 @@
+# Compiled executables
+*.exe
+
+# Build directories
+temp/
+dist/
+
+# AutoHotkey compiled files
+*.ahk.exe
+
+# Windows thumbnails
+Thumbs.db
+ehthumbs.db
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
+
+# Package files
+*.zip
+*.rar
+*.7z
+
+# Temporary files
+*.tmp
+*.temp
+
+# AutoHotkey specific
+*.ahk~
+
+# Windows Installer files
+*.msi
+*.msix
+*.appx
+
+# Backup files
+*.bak
+*.backup
+*_backup.*
+
+# Development test files
+*-test.ahk
+*-working.ahk
+pip-controller-test.ahk
+pip-controller-working.ahk
