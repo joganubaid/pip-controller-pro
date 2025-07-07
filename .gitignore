@@ -1,5 +1,6 @@
-# Compiled executables
+# Compiled executables (allow main exe for user downloads)
 *.exe
+!pip-controller.exe
 
 # Build directories
 temp/
