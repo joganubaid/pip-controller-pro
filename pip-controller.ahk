@@ -10,7 +10,7 @@ CoordMode, Mouse, Screen
 
 ; Application info
 AppName := "PiP Controller Pro"
-AppVersion := "2.0.0"
+AppVersion := "2.0.1"
 
 ; Default settings
 transparency := 80
