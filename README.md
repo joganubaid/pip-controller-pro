@@ -28,35 +28,35 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 
 ## 📥 Download & Install
 
-### 🔧 Option 1: Windows Installer (RECOMMENDED)
-**File:** [PiPControllerPro-v2.0.1-Setup.exe](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.1/PiPControllerPro-v2.0.1-Setup.exe) (2.22 MB)
-
-✅ **Choose this if you want:**
-- Easy installation with setup wizard
-- Start Menu shortcuts
-- Windows integration
-- Professional uninstaller
-
-**📥 How to install:**
-1. Click the download link above
-2. Double-click the downloaded installer
-3. Follow the setup wizard
-4. Done! Find "PiP Controller Pro" in Start Menu
-
-### 📁 Option 2: Portable Version
-**File:** [PiPControllerPro-v2.0.1-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.1/PiPControllerPro-v2.0.1-Portable.zip) (604 KB)
+### 🔧 Option 1: Portable Version (RECOMMENDED)
+**File:** [PiPControllerPro-v2.0.1-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.1/PiPControllerPro-v2.0.1-Portable.zip) (~3 MB)
 
 ✅ **Choose this if you want:**
 - No installation required
-- Run from USB drive
-- Portable software
-- Limited system permissions
+- Complete package with documentation
+- Run from anywhere (USB drive, desktop, etc.)
+- Easy to share or backup
 
 **📥 How to use:**
 1. Click the download link above
 2. Extract the ZIP file anywhere
 3. Run `pip-controller.exe`
 4. Done! No installation needed
+
+### 📁 Option 2: Direct Executable
+**File:** [pip-controller.exe](https://github.com/joganubaid/pip-controller-pro/raw/main/pip-controller.exe) (~1.2 MB)
+
+✅ **Choose this if you want:**
+- Single file download
+- Just the executable
+- Quick and simple
+- Minimal download size
+
+**📥 How to use:**
+1. Click the download link above
+2. Save the file anywhere
+3. Double-click to run
+4. Done! Ready to use
 
 ## 🚀 Quick Start Guide
 
