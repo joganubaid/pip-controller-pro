@@ -76,15 +76,43 @@ FindPiPWindow() {
     if (id)
         return id
     
-    ; Try alternative names/patterns
+    ; Try alternative names/patterns for Chrome
     WinGet, id, ID, Picture in picture ahk_exe chrome.exe
     if (id)
         return id
         
-    ; Check for Edge browser PiP too
+    ; Check for Edge browser PiP - multiple variations
     WinGet, id, ID, Picture-in-picture ahk_exe msedge.exe
     if (id)
         return id
+        
+    ; Try alternative Edge patterns
+    WinGet, id, ID, Picture in picture ahk_exe msedge.exe
+    if (id)
+        return id
+        
+    ; Try with different case variations for Edge
+    WinGet, id, ID, picture-in-picture ahk_exe msedge.exe
+    if (id)
+        return id
+        
+    ; Try finding any small Edge window (PiP windows are typically small)
+    WinGet, windows, List, ahk_exe msedge.exe
+    if (windows > 0) {
+        Loop, %windows% {
+            windowId := windows%A_Index%
+            if (windowId) {
+                WinGetPos, x, y, w, h, ahk_id %windowId%
+                WinGetTitle, title, ahk_id %windowId%
+                ; Check if it's a small window (likely PiP) and has video-related title
+                if (w > 0 && h > 0 && w < 800 && h < 600) {
+                    if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || title == "") {
+                        return windowId
+                    }
+                }
+            }
+        }
+    }
         
     return ""
 }
@@ -117,7 +145,7 @@ InitializeTray() {
     Menu, BrowserMenu, Add, Reset All PiP, ForceResetPiP
     
     ; Main tray menu
-    Menu, Tray, Add, %AppName% v%AppVersion%, ShowAbout
+    Menu, Tray, Add, About, ShowAbout
     Menu, Tray, Add
     Menu, Tray, Add, Quick Transparency, :TransparencyMenu
     Menu, Tray, Add, Response Speed, :SpeedMenu
@@ -129,7 +157,7 @@ InitializeTray() {
     Menu, Tray, Add, Exit, ExitApp
     
     ; Set default action (double-click)
-    Menu, Tray, Default, %AppName% v%AppVersion%
+    Menu, Tray, Default, About
     
     ; Set tray tip
     Menu, Tray, Tip, %AppName% v%AppVersion%
@@ -271,12 +299,58 @@ TestChrome:
 return
 
 TestEdge:
+    ; Use the improved detection logic
+    foundWindow := ""
+    
+    ; Try exact title matches first
     WinGet, id, ID, Picture-in-picture ahk_exe msedge.exe
-    if (id) {
-        WinGetTitle, title, ahk_id %id%
-        MsgBox, 64, Edge PiP Found, Edge PiP Window Found!`n`nTitle: %title%`nWindow ID: %id%
+    if (id)
+        foundWindow := id
+    
+    if (!foundWindow) {
+        WinGet, id, ID, Picture in picture ahk_exe msedge.exe
+        if (id)
+            foundWindow := id
+    }
+    
+    if (!foundWindow) {
+        WinGet, id, ID, picture-in-picture ahk_exe msedge.exe
+        if (id)
+            foundWindow := id
+    }
+    
+    ; Try finding small windows if exact match fails
+    if (!foundWindow) {
+        WinGet, windows, List, ahk_exe msedge.exe
+        Loop, %windows% {
+            windowId := windows%A_Index%
+            WinGetPos, x, y, w, h, ahk_id %windowId%
+            WinGetTitle, title, ahk_id %windowId%
+            if (w > 0 && h > 0 && w < 800 && h < 600) {
+                if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || title == "") {
+                    foundWindow := windowId
+                    break
+                }
+            }
+        }
+    }
+    
+    if (foundWindow) {
+        WinGetTitle, title, ahk_id %foundWindow%
+        WinGetPos, x, y, w, h, ahk_id %foundWindow%
+        MsgBox, 64, Edge PiP Found, Edge PiP Window Found!`n`nTitle: %title%`nWindow ID: %foundWindow%`nSize: %w%x%h%`nPosition: %x%,%y%
     } else {
-        MsgBox, 48, Edge PiP Not Found, No Edge Picture-in-Picture window found.
+        ; Show all Edge windows for debugging
+        debugInfo := "No Edge PiP found. All Edge windows:`n`n"
+        WinGet, windows, List, ahk_exe msedge.exe
+        Loop, %windows% {
+            windowId := windows%A_Index%
+            WinGetTitle, title, ahk_id %windowId%
+            WinGetPos, x, y, w, h, ahk_id %windowId%
+            if (title != "")
+                debugInfo .= "Title: " . title . "`nSize: " . w . "x" . h . "`n`n"
+        }
+        MsgBox, 48, Edge PiP Not Found, %debugInfo%
     }
 return
 
