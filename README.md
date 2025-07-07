@@ -1,4 +1,4 @@
-# PiP Controller Pro v2.0.0
+# PiP Controller Pro v2.0.1
 
 🎬 **Professional Picture-in-Picture Window Controller**
 
@@ -8,7 +8,14 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows/)
 [![AutoHotkey](https://img.shields.io/badge/AutoHotkey-v1.1+-green.svg)](https://www.autohotkey.com/)
 
-![PiP Controller Pro](https://via.placeholder.com/800x400/2196F3/FFFFFF?text=PiP+Controller+Pro+v2.0.0)
+![PiP Controller Pro](https://via.placeholder.com/800x400/2196F3/FFFFFF?text=PiP+Controller+Pro+v2.0.1)
+
+## 🆕 What's New in v2.0.1
+
+- **🔧 Enhanced Edge Compatibility**: Fixed Microsoft Edge Picture-in-Picture detection issues
+- **🐛 Bug Fixes**: Resolved AutoHotkey runtime errors and improved window detection
+- **🔍 Diagnostic Tool**: Added Edge PiP diagnostic tool for troubleshooting
+- **⚡ Better Performance**: Improved error handling and null checks
 
 ## Features
 
@@ -22,7 +29,7 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 ## 📥 Download & Install
 
 ### 🔧 Option 1: Windows Installer (RECOMMENDED)
-**File:** [PiPControllerPro-v2.0.0-Setup.exe](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.0/PiPControllerPro-v2.0.0-Setup.exe) (2.22 MB)
+**File:** [PiPControllerPro-v2.0.1-Setup.exe](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.1/PiPControllerPro-v2.0.1-Setup.exe) (2.22 MB)
 
 ✅ **Choose this if you want:**
 - Easy installation with setup wizard
@@ -37,7 +44,7 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 4. Done! Find "PiP Controller Pro" in Start Menu
 
 ### 📁 Option 2: Portable Version
-**File:** [PiPControllerPro-v2.0.0-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.0/PiPControllerPro-v2.0.0-Portable.zip) (604 KB)
+**File:** [PiPControllerPro-v2.0.1-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.0.1/PiPControllerPro-v2.0.1-Portable.zip) (604 KB)
 
 ✅ **Choose this if you want:**
 - No installation required
