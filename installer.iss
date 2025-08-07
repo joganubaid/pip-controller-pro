@@ -1,12 +1,12 @@
 [Setup]
 ; Basic app information
 AppName=PiP Controller Pro
-AppVersion=2.0.0
-AppVerName=PiP Controller Pro 2.0.0
-AppPublisher=Your Name
-AppPublisherURL=https://github.com/yourusername/pip-controller
-AppSupportURL=https://github.com/yourusername/pip-controller/issues
-AppUpdatesURL=https://github.com/yourusername/pip-controller/releases
+AppVersion=2.0.1
+AppVerName=PiP Controller Pro 2.0.1
+AppPublisher=joganubaid
+AppPublisherURL=https://github.com/joganubaid/pip-controller-pro
+AppSupportURL=https://github.com/joganubaid/pip-controller-pro/issues
+AppUpdatesURL=https://github.com/joganubaid/pip-controller-pro/releases
 DefaultDirName={autopf}\PiP Controller Pro
 DefaultGroupName=PiP Controller Pro
 AllowNoIcons=yes
@@ -14,7 +14,7 @@ LicenseFile=
 InfoBeforeFile=
 InfoAfterFile=
 OutputDir=dist
-OutputBaseFilename=PiPControllerPro-v2.0.0-Setup
+OutputBaseFilename=PiPControllerPro-v2.0.1-Setup
 SetupIconFile=
 Compression=lzma
 SolidCompression=yes

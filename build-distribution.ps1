@@ -8,7 +8,7 @@ param(
     [switch]$Clean = $false
 )
 
-$Version = "2.0.0"
+$Version = "2.0.1"
 $AppName = "PiPControllerPro"
 $scriptDir = $PSScriptRoot
 $distDir = Join-Path $scriptDir "dist"
@@ -73,7 +73,7 @@ Features:
 
 For more information, see README.md
 
-Visit: https://github.com/yourusername/pip-controller
+Visit: https://github.com/joganubaid/pip-controller-pro
 "@
     
     $portableInfo | Out-File -FilePath "$portableDir\PORTABLE-README.txt" -Encoding UTF8
@@ -216,7 +216,7 @@ function Create-ReleaseNotes {
 
 ## 📞 Support
 
-- **Issues**: Report at [GitHub Issues](https://github.com/yourusername/pip-controller/issues)
+- **Issues**: Report at [GitHub Issues](https://github.com/joganubaid/pip-controller-pro/issues)
 - **Documentation**: See README.md included with download
 - **License**: MIT License - free for personal and commercial use
 

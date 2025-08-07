@@ -1,7 +1,7 @@
 # Simple Portable Version Builder
 # Creates a ZIP package ready for distribution
 
-$Version = "2.0.0"
+$Version = "2.0.1"
 $AppName = "PiPControllerPro"
 
 Write-Host "Creating PiP Controller Pro v$Version Portable Edition..." -ForegroundColor Green
@@ -79,7 +79,7 @@ SYSTEM REQUIREMENTS:
 For detailed information, see README.md
 
 LICENSE: MIT License - Free for personal and commercial use
-SUPPORT: https://github.com/yourusername/pip-controller
+SUPPORT: https://github.com/joganubaid/pip-controller-pro
 
 Enjoy your enhanced Picture-in-Picture experience! 🚀
 "@

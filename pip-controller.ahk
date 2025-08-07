@@ -13,7 +13,7 @@ AppName := "PiP Controller Pro"
 AppVersion := "2.0.1"
 
 ; Default settings
-transparency := 80
+transparency := 179
 checkInterval := 50
 isEnabled := true
 
@@ -40,74 +40,94 @@ CheckMouseOverPiP:
     ; Find Picture-in-Picture window
     pipWindow := FindPiPWindow()
     
-    if (pipWindow != "") {
+    if (pipWindow != "" && pipWindow) {
+        ; Check if window still exists before proceeding
         WinGetPos, pipX, pipY, pipWidth, pipHeight, ahk_id %pipWindow%
         
-        ; Check if mouse is over the PiP window
-        isMouseOverPiP := (mouseX >= pipX && mouseX <= pipX + pipWidth && mouseY >= pipY && mouseY <= pipY + pipHeight)
-        
-        if (isMouseOverPiP) {
-            ; Check if Shift is pressed
-            if (GetKeyState("Shift", "P")) {
-                ; Make window fully opaque and clickable
+        ; Only proceed if WinGetPos succeeded (ErrorLevel = 0)
+        if (ErrorLevel = 0 && pipWidth > 0 && pipHeight > 0) {
+            ; Check if mouse is over the PiP window
+            isMouseOverPiP := (mouseX >= pipX && mouseX <= pipX + pipWidth && mouseY >= pipY && mouseY <= pipY + pipHeight)
+            
+            if (isMouseOverPiP) {
+                ; Check if Shift is pressed
+                if (GetKeyState("Shift", "P")) {
+                    ; Make window fully opaque and clickable
+                    WinSet, Transparent, 255, ahk_id %pipWindow%
+                    WinSet, ExStyle, -0x20, ahk_id %pipWindow%   ; Remove click-through
+                } else {
+                    ; Make window semi-transparent and click-through
+                    WinSet, Transparent, %transparency%, ahk_id %pipWindow%
+                    WinSet, ExStyle, +0x20, ahk_id %pipWindow%   ; Enable click-through
+                }
+                
+                if (!isHovering) {
+                    isHovering := true
+                }
+            } else if (isHovering) {
+                ; Reset to fully opaque when not hovering
                 WinSet, Transparent, 255, ahk_id %pipWindow%
                 WinSet, ExStyle, -0x20, ahk_id %pipWindow%   ; Remove click-through
-            } else {
-                ; Make window semi-transparent and click-through
-                WinSet, Transparent, %transparency%, ahk_id %pipWindow%
-                WinSet, ExStyle, +0x20, ahk_id %pipWindow%   ; Enable click-through
+                isHovering := false
             }
-            
-            if (!isHovering) {
-                isHovering := true
+        } else {
+            ; Window no longer exists, reset hovering state
+            if (isHovering) {
+                isHovering := false
             }
-        } else if (isHovering) {
-            ; Reset to fully opaque when not hovering
-            WinSet, Transparent, 255, ahk_id %pipWindow%
-            WinSet, ExStyle, -0x20, ahk_id %pipWindow%   ; Remove click-through
-            isHovering := false
         }
+    } else if (isHovering) {
+        ; No PiP window found, reset hovering state
+        isHovering := false
     }
 return
 
 FindPiPWindow() {
     ; Try to find Chrome's Picture-in-Picture window
     WinGet, id, ID, Picture-in-picture ahk_exe chrome.exe
-    if (id)
+    if (id && id != "")
         return id
     
     ; Try alternative names/patterns for Chrome
     WinGet, id, ID, Picture in picture ahk_exe chrome.exe
-    if (id)
+    if (id && id != "")
         return id
         
     ; Check for Edge browser PiP - multiple variations
     WinGet, id, ID, Picture-in-picture ahk_exe msedge.exe
-    if (id)
+    if (id && id != "")
         return id
         
     ; Try alternative Edge patterns
     WinGet, id, ID, Picture in picture ahk_exe msedge.exe
-    if (id)
+    if (id && id != "")
         return id
         
     ; Try with different case variations for Edge
     WinGet, id, ID, picture-in-picture ahk_exe msedge.exe
-    if (id)
+    if (id && id != "")
         return id
         
     ; Try finding any small Edge window (PiP windows are typically small)
+    ; Only do this expensive operation if simple detection failed
     WinGet, windows, List, ahk_exe msedge.exe
-    if (windows > 0) {
+    if (windows && windows > 0) {
         Loop, %windows% {
             windowId := windows%A_Index%
-            if (windowId) {
+            ; Add null check for windowId
+            if (windowId && windowId != "") {
+                ; Use ErrorLevel to check if WinGetPos succeeded
                 WinGetPos, x, y, w, h, ahk_id %windowId%
-                WinGetTitle, title, ahk_id %windowId%
-                ; Check if it's a small window (likely PiP) and has video-related title
-                if (w > 0 && h > 0 && w < 800 && h < 600) {
-                    if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || title == "") {
-                        return windowId
+                if (ErrorLevel = 0) {
+                    WinGetTitle, title, ahk_id %windowId%
+                    ; Check if it's a reasonably sized window (likely PiP)
+                    if (w > 50 && h > 50 && w < 800 && h < 600) {
+                        ; Check for video-related keywords or empty title (common for PiP)
+                        if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") 
+                            || InStr(title, "Player") || InStr(title, "Twitch") 
+                            || InStr(title, "Vimeo") || title == "") {
+                            return windowId
+                        }
                     }
                 }
             }
