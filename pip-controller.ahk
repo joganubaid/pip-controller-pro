@@ -569,7 +569,7 @@ return
 
 ; Hotkeys
 ^!c::
-    ShowStatus()
+    Gosub, ShowStatus
 return
 
 ^!p::

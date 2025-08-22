@@ -58,3 +58,7 @@ Icon?
 *-working.ahk
 pip-controller-test.ahk
 pip-controller-working.ahk
+
+# User settings and data
+%AppData%/PiPController/
+settings.ini
