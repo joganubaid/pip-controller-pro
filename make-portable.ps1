@@ -1,7 +1,7 @@
 # Simple Portable Version Builder
 # Creates a ZIP package ready for distribution
 
-$Version = "2.0.1"
+$Version = "2.1.0"
 $AppName = "PiPControllerPro"
 
 Write-Host "Creating PiP Controller Pro v$Version Portable Edition..." -ForegroundColor Green
@@ -42,24 +42,28 @@ QUICK START:
 3. Open Chrome/Edge, play a video, enable Picture-in-Picture
 4. Hover over PiP window to see transparency effects
 5. Hold Shift while hovering for full opacity
+6. Use Ctrl+Alt+C for Status Dashboard
 
 FEATURES:
 • No installation required - run from anywhere
 • Settings automatically saved to: %AppData%\PiPController\
+• Auto-start with Windows option
 • Professional system tray integration with submenus
-• Status Dashboard (Ctrl+Alt+C or tray menu)
+• Status Dashboard with real-time monitoring
 • 6 transparency presets (Almost Invisible to Opaque)
 • 5 response speed settings (Ultra Fast to Slow)
 • Browser testing tools for Chrome and Edge
 • Multiple reset options for troubleshooting
+• Enhanced Edge compatibility
 
 TRAY MENU FEATURES:
+• Status Dashboard - Real-time monitoring and diagnostics
 • Quick Transparency - 6 instant preset levels
 • Response Speed - 5 performance levels  
 • Browser Tools - Test and reset PiP windows
 • Reset Options - Multiple reset levels
-• Status Dashboard - Real-time monitoring GUI
 • Enable/Disable - Toggle functionality
+• Auto-Start with Windows - Startup integration
 
 HOTKEYS:
 • Ctrl+Alt+C: Open Status Dashboard
@@ -67,14 +71,21 @@ HOTKEYS:
 • Ctrl+Alt+X: Exit
 
 BROWSER SUPPORT:
-✅ Google Chrome
-✅ Microsoft Edge  
+✅ Google Chrome - Full support with enhanced detection
+✅ Microsoft Edge - Full support with improved compatibility
 ❓ Firefox (may work with modifications)
 
 SYSTEM REQUIREMENTS:
 • Windows 10/11 (Windows 7/8 may work)
 • Minimal memory usage (< 15 MB RAM)
 • No administrator rights required
+• Settings saved to user profile
+
+SETTINGS PERSISTENCE:
+• All settings automatically saved between sessions
+• Transparency, speed, and preferences remembered
+• Auto-start option integrated with Windows
+• Clean settings management
 
 For detailed information, see README.md
 

@@ -8,7 +8,7 @@ param(
     [switch]$Clean = $false
 )
 
-$Version = "2.0.1"
+$Version = "2.1.0"
 $AppName = "PiPControllerPro"
 $scriptDir = $PSScriptRoot
 $distDir = Join-Path $scriptDir "dist"
@@ -157,27 +157,27 @@ function Create-ReleaseNotes {
 
 ## 🎉 What's New in v$Version
 
-### ✨ Features
-- **Professional System Tray Integration** - Complete control from your system tray
-- **Status Dashboard** - Real-time monitoring of PiP windows and app status
-- **Multiple Transparency Presets** - Quick selection from 6 preset levels
-- **Response Speed Control** - Adjust from Ultra Fast to Slow response times
-- **Browser Tools** - Test Chrome and Edge PiP detection
-- **Reset Options** - Multiple reset levels for troubleshooting
-- **Enhanced Hotkeys** - Ctrl+Alt+C for Status Dashboard access
+### ✨ New Features
+- **💾 Settings Persistence** - All settings automatically saved and restored between sessions
+- **🚀 Auto-Start Support** - Option to start with Windows automatically
+- **📊 Enhanced Status Dashboard** - Real-time monitoring with detailed window information
+- **🔄 Reset Options** - Multiple reset levels for troubleshooting
+- **🎯 Smart Detection** - Enhanced PiP window detection with fallback methods
 
 ### 🔧 Technical Improvements
-- **Clean Architecture** - Simplified, maintainable codebase
-- **Professional Installer** - Inno Setup-based installer with proper uninstall
-- **Portable Version** - No-install ZIP package option
-- **Settings Persistence** - All settings saved automatically
-- **Error Handling** - Robust error handling and recovery
+- **Improved Edge Compatibility** - Better detection and handling of Microsoft Edge PiP windows
+- **Performance Optimizations** - Better error handling and resource management
+- **Settings Management** - Automatic settings file creation and management
+- **Registry Integration** - Proper Windows startup integration
+- **Enhanced Error Handling** - More robust error recovery and user feedback
 
-### 🖱️ User Interface
-- **Modern Tray Menu** - Professional menu with icons and submenus
-- **Status Dashboard** - Beautiful GUI with real-time information
-- **Smart Detection** - Enhanced PiP window detection for Chrome and Edge
-- **Visual Feedback** - Notifications and status indicators
+### 🖱️ User Interface Enhancements
+- **Professional System Tray** - Complete control from your system tray with submenus
+- **Status Dashboard** - Real-time monitoring with window information and diagnostics
+- **Multiple Transparency Presets** - 6 preset levels from almost invisible to opaque
+- **Response Speed Control** - 5 performance levels from ultra fast to slow
+- **Browser Tools** - Test and reset PiP windows for troubleshooting
+- **Visual Feedback** - Enhanced notifications and status indicators
 
 ## 📦 Distribution Options
 
@@ -185,20 +185,23 @@ function Create-ReleaseNotes {
 - **File**: \`$AppName-v$Version-Setup.exe\`
 - **Features**: Professional installation, Start Menu shortcuts, optional Windows startup
 - **Uninstall**: Proper Windows uninstaller with settings cleanup
+- **Registry**: Clean registry integration for auto-start functionality
 
 ### 📁 Portable Version
 - **File**: \`$AppName-v$Version-Portable.zip\`
 - **Features**: No installation required, run from any location
 - **Settings**: Saved to user AppData folder
+- **Portability**: Complete package with documentation
 
 ## 🎯 How to Use
 
 1. **Install or extract** the application
-2. **Run PiP Controller Pro**
-3. **Right-click the tray icon** for all options
+2. **Run PiP Controller Pro** - appears in system tray
+3. **Right-click the tray icon** for all options and settings
 4. **Open Chrome/Edge**, play a video, enable Picture-in-Picture
 5. **Hover over PiP window** - enjoy automatic transparency!
 6. **Hold Shift** while hovering for full opacity
+7. **Use Ctrl+Alt+C** for Status Dashboard access
 
 ## 🔧 System Requirements
 
@@ -206,19 +209,37 @@ function Create-ReleaseNotes {
 - **Memory**: Minimal (< 15 MB RAM usage)
 - **Browsers**: Chrome, Edge (Firefox may work with modifications)
 - **Permissions**: No administrator rights required
+- **Storage**: ~1.2 MB for executable, settings saved to AppData
 
-## 🐛 Bug Fixes
+## 🐛 Bug Fixes & Improvements
 
-- Fixed AutoHotkey compilation errors
-- Resolved tray menu initialization issues
-- Improved PiP window detection reliability
-- Fixed settings persistence across restarts
+- **Enhanced Edge Compatibility** - Fixed Microsoft Edge Picture-in-Picture detection issues
+- **Settings Persistence** - Resolved settings not being saved between sessions
+- **Auto-Start Integration** - Proper Windows registry integration for startup
+- **Window Detection** - Improved PiP window detection with fallback methods
+- **Error Recovery** - Better handling of window state changes and errors
+- **Memory Management** - Optimized resource usage and cleanup
+
+## 🆕 New Hotkeys
+
+- **Ctrl+Alt+C** - Open Status Dashboard
+- **Ctrl+Alt+P** - Pause/Resume transparency (existing)
+- **Ctrl+Alt+X** - Exit application (existing)
+
+## 📁 Settings & Configuration
+
+- **Settings File**: Automatically saved to \`%AppData%\PiPController\settings.ini\`
+- **Auto-Start**: Windows registry integration for startup
+- **Transparency**: 6 preset levels (25-255)
+- **Response Speed**: 5 performance levels (10-200ms)
+- **Browser Support**: Enhanced Chrome and Edge detection
 
 ## 📞 Support
 
 - **Issues**: Report at [GitHub Issues](https://github.com/joganubaid/pip-controller-pro/issues)
 - **Documentation**: See README.md included with download
 - **License**: MIT License - free for personal and commercial use
+- **Troubleshooting**: Built-in diagnostic tools and reset options
 
 ---
 

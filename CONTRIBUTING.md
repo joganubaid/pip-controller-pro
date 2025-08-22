@@ -48,6 +48,9 @@ Thank you for your interest in contributing to PiP Controller Pro! We welcome co
 2. Verify Chrome and Edge compatibility
 3. Test all transparency levels and speeds
 4. Ensure system tray functionality works
+5. Test settings persistence and auto-start functionality
+6. Verify Status Dashboard and diagnostic tools
+7. Test reset options and error recovery
 
 ## Code Style
 - Use clear, descriptive variable names

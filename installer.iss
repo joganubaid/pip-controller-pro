@@ -1,8 +1,8 @@
 [Setup]
 ; Basic app information
 AppName=PiP Controller Pro
-AppVersion=2.0.1
-AppVerName=PiP Controller Pro 2.0.1
+AppVersion=2.1.0
+AppVerName=PiP Controller Pro 2.1.0
 AppPublisher=joganubaid
 AppPublisherURL=https://github.com/joganubaid/pip-controller-pro
 AppSupportURL=https://github.com/joganubaid/pip-controller-pro/issues
@@ -14,7 +14,7 @@ LicenseFile=
 InfoBeforeFile=
 InfoAfterFile=
 OutputDir=dist
-OutputBaseFilename=PiPControllerPro-v2.0.1-Setup
+OutputBaseFilename=PiPControllerPro-v2.1.0-Setup
 SetupIconFile=
 Compression=lzma
 SolidCompression=yes
