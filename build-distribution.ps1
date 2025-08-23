@@ -34,9 +34,30 @@ New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
 # Build the main executable first
 Write-Host "Building main executable..." -ForegroundColor Yellow
-$buildResult = & "$scriptDir\build.ps1" -Build
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Failed to build main executable!" -ForegroundColor Red
+try {
+    $buildProcess = Start-Process -FilePath "powershell.exe" -ArgumentList "-File", "`"$scriptDir\build.ps1`"", "-Build" -Wait -PassThru -NoNewWindow
+    if ($buildProcess.ExitCode -ne 0) {
+        Write-Host "Build process failed with exit code: $($buildProcess.ExitCode)" -ForegroundColor Red
+        
+        # Try alternative build method
+        Write-Host "Attempting alternative build method..." -ForegroundColor Yellow
+        & "$scriptDir\build.ps1" -Build
+        
+        if (-not (Test-Path "$scriptDir\pip-controller.exe")) {
+            Write-Host "Failed to build main executable!" -ForegroundColor Red
+            Write-Host "Please run '.\build.ps1 -Build' manually to see detailed error messages." -ForegroundColor Yellow
+            exit 1
+        }
+    }
+} catch {
+    Write-Host "Build execution failed: $_" -ForegroundColor Red
+    exit 1
+}
+
+# Verify executable exists
+if (-not (Test-Path "$scriptDir\pip-controller.exe")) {
+    Write-Host "Executable not found after build attempt!" -ForegroundColor Red
+    Write-Host "Please ensure AutoHotkey is properly installed and try running '.\build.ps1 -Build' manually." -ForegroundColor Yellow
     exit 1
 }
 

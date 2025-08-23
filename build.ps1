@@ -64,48 +64,96 @@ function Install-AutoHotkey {
 function Build-Executable {
     param($ahkCompilerPath)
     
-Write-Host "Building executable with verbose output..." -ForegroundColor Yellow
-Write-Host "Input:  $ahkScript" -ForegroundColor Gray
-Write-Host "Output: $outputExe" -ForegroundColor Gray
+    Write-Host "Building executable with enhanced error checking..." -ForegroundColor Yellow
+    Write-Host "Input:  $ahkScript" -ForegroundColor Gray
+    Write-Host "Output: $outputExe" -ForegroundColor Gray
+    Write-Host "Compiler: $ahkCompilerPath" -ForegroundColor Gray
 
-# Ensure directory is writable environment
-Write-Host "Checking directory permissions..." -ForegroundColor Gray
-if (-not (Test-Path $scriptDir)) {
-    Write-Host "Directory $scriptDir does not exist! Creating..." -ForegroundColor Yellow
-    New-Item -Path $scriptDir -ItemType Directory -Force
-}
+    # Ensure directory is writable
+    Write-Host "Checking directory permissions..." -ForegroundColor Gray
+    if (-not (Test-Path $scriptDir)) {
+        Write-Host "Directory $scriptDir does not exist! Creating..." -ForegroundColor Yellow
+        New-Item -Path $scriptDir -ItemType Directory -Force
+    }
 
-# Remove any existing compiled executable prior to build
-if (Test-Path $outputExe) {
-    Write-Host "Removing existing executable to avoid conflicts..." -ForegroundColor Yellow
-    Remove-Item $outputExe -Force
-}
+    # Remove any existing compiled executable prior to build
+    if (Test-Path $outputExe) {
+        Write-Host "Removing existing executable to avoid conflicts..." -ForegroundColor Yellow
+        try {
+            Remove-Item $outputExe -Force
+        } catch {
+            Write-Host "Warning: Could not remove existing executable: $_" -ForegroundColor Yellow
+        }
+    }
+    
+    # Validate input file exists
+    if (-not (Test-Path $ahkScript)) {
+        Write-Host "Error: AutoHotkey script not found: $ahkScript" -ForegroundColor Red
+        return $false
+    }
     
     try {
-        # Run the AutoHotkey compiler
-        $arguments = @(
-            "/in", "`"$ahkScript`"",
-            "/out", "`"$outputExe`""
+        # Try multiple compilation approaches
+        $attempts = @(
+            @{
+                Args = @("/in", "`"$ahkScript`"", "/out", "`"$outputExe`"")
+                Description = "Standard compilation"
+            },
+            @{
+                Args = @("/in", $ahkScript, "/out", $outputExe)
+                Description = "Unquoted paths"
+            },
+            @{
+                Args = @("/in", (Resolve-Path $ahkScript).Path, "/out", (Join-Path $PWD "pip-controller.exe"))
+                Description = "Full paths"
+            }
         )
         
-        Start-Process -FilePath $ahkCompilerPath -ArgumentList $arguments -Wait -NoNewWindow
-        
-        if (Test-Path $outputExe) {
-            Write-Host "Build successful! Executable created at:" -ForegroundColor Green
-            Write-Host $outputExe -ForegroundColor White
+        foreach ($attempt in $attempts) {
+            Write-Host "Attempting: $($attempt.Description)..." -ForegroundColor Gray
             
-            # Get file size
-            $fileSize = (Get-Item $outputExe).Length
-            $fileSizeKB = [math]::Round($fileSize / 1KB, 2)
-            Write-Host "File size: $fileSizeKB KB" -ForegroundColor Gray
+            $process = Start-Process -FilePath $ahkCompilerPath -ArgumentList $attempt.Args -Wait -NoNewWindow -PassThru
             
-            return $true
-        } else {
-            Write-Host "Build failed - executable not created" -ForegroundColor Red
-            return $false
+            Write-Host "Compiler exit code: $($process.ExitCode)" -ForegroundColor Gray
+            
+            if (Test-Path $outputExe) {
+                Write-Host "Build successful! Executable created at:" -ForegroundColor Green
+                Write-Host $outputExe -ForegroundColor White
+                
+                # Get file size
+                $fileSize = (Get-Item $outputExe).Length
+                $fileSizeKB = [math]::Round($fileSize / 1KB, 2)
+                Write-Host "File size: $fileSizeKB KB" -ForegroundColor Gray
+                
+                # Test if executable is valid
+                try {
+                    $fileInfo = Get-Item $outputExe
+                    Write-Host "Created: $($fileInfo.CreationTime)" -ForegroundColor Gray
+                    Write-Host "Modified: $($fileInfo.LastWriteTime)" -ForegroundColor Gray
+                } catch {
+                    Write-Host "Warning: Could not get file info: $_" -ForegroundColor Yellow
+                }
+                
+                return $true
+            }
+            
+            Write-Host "Attempt failed, trying next method..." -ForegroundColor Yellow
         }
+        
+        Write-Host "All compilation attempts failed" -ForegroundColor Red
+        
+        # Additional diagnostics
+        Write-Host "`nDiagnostic Information:" -ForegroundColor Yellow
+        Write-Host "Current directory: $PWD" -ForegroundColor Gray
+        Write-Host "Script directory: $scriptDir" -ForegroundColor Gray
+        Write-Host "AHK Script exists: $(Test-Path $ahkScript)" -ForegroundColor Gray
+        Write-Host "Output directory writable: $(Test-Path $scriptDir -PathType Container)" -ForegroundColor Gray
+        
+        return $false
+        
     } catch {
-        Write-Host "Build failed: $_" -ForegroundColor Red
+        Write-Host "Build failed with exception: $_" -ForegroundColor Red
+        Write-Host "Exception type: $($_.Exception.GetType().Name)" -ForegroundColor Red
         return $false
     }
 }

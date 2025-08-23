@@ -15,9 +15,28 @@ New-Item -ItemType Directory -Path "temp\Portable" -Force | Out-Null
 
 # Build the executable first
 Write-Host "Building executable..." -ForegroundColor Yellow
-& ".\build.ps1" -Build
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Build failed!" -ForegroundColor Red
+try {
+    & ".\build.ps1" -Build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Build process returned error code: $LASTEXITCODE" -ForegroundColor Red
+        
+        # Check if executable exists anyway
+        if (-not (Test-Path "pip-controller.exe")) {
+            Write-Host "Build failed - executable not created!" -ForegroundColor Red
+            Write-Host "Please run '.\build.ps1 -Build' manually to diagnose the issue." -ForegroundColor Yellow
+            exit 1
+        } else {
+            Write-Host "Executable found despite error code - continuing..." -ForegroundColor Yellow
+        }
+    }
+} catch {
+    Write-Host "Build execution failed: $_" -ForegroundColor Red
+    exit 1
+}
+
+# Verify executable exists before proceeding
+if (-not (Test-Path "pip-controller.exe")) {
+    Write-Host "Executable not found! Cannot create portable version." -ForegroundColor Red
     exit 1
 }
 
