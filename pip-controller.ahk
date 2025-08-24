@@ -171,7 +171,9 @@ FindPiPWindow:
                     if (w > 50 && h > 50 && w < 800 && h < 600)
                     {
                         ; Check for video-related keywords or empty title (common for PiP)
-                        if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || InStr(title, "Twitch") || InStr(title, "Vimeo") || title == "" || InStr(title, "Picture") || InStr(title, "picture"))
+                        if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") 
+                            || InStr(title, "Player") || InStr(title, "Twitch") 
+                            || InStr(title, "Vimeo") || title == "" || InStr(title, "Picture") || InStr(title, "picture"))
                         {
                             FindPiPWindowResult := windowId
                             return
@@ -207,8 +209,8 @@ SaveSettings:
     IniWrite, %isEnabled%, %settingsFile%, Settings, Enabled
     IniWrite, %autoStart%, %settingsFile%, Settings, AutoStart
     return
-
-; Initialize system tray
+; I
+nitialize system tray
 InitializeTray:
     global
     
@@ -264,7 +266,7 @@ InitializeTray:
     
     ; Update auto-start menu item
     Gosub, UpdateAutoStartMenu
-return
+    return
 
 ; Update auto-start menu item
 UpdateAutoStartMenu:
@@ -365,9 +367,8 @@ ToggleAutoStart:
     }
     Gosub, UpdateAutoStartMenu
     Gosub, SaveSettings
-return
-
-; Transparency settings
+return; Transpa
+rency settings
 SetTransparency25:
     transparency := 25
     TrayTip, %AppName%, Transparency: Almost Invisible, 2, 1
@@ -509,7 +510,7 @@ TestEdge:
             WinGetTitle, title, ahk_id %windowId%
             if (w > 0 && h > 0 && w < 800 && h < 600)
             {
-                if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || InStr(title, "Twitch") || InStr(title, "Vimeo") || title == "" || InStr(title, "Picture") || InStr(title, "picture"))
+                if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || title == "" || InStr(title, "Picture") || InStr(title, "picture"))
                 {
                     foundWindow := windowId
                     break
