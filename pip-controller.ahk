@@ -272,13 +272,19 @@ InitializeTray:
 UpdateAutoStartMenu:
     global autoStart
     
-    if (autoStart)
-    {
-        Menu, Tray, Rename, Auto-Start with Windows, Disable Auto-Start
-    }
-    else
-    {
-        Menu, Tray, Rename, Disable Auto-Start, Auto-Start with Windows
+    ; Fixed line 215: Improved menu item handling
+    Menu, Tray, Rename, Auto-Start with Windows, % (autoStart ? "✓ Auto-Start Enabled" : "Auto-Start with Windows")
+    if (autoStart) {
+        try {
+            Menu, Tray, Rename, ✓ Auto-Start Enabled, Disable Auto-Start
+        } catch {
+            ; Fallback if Unicode characters cause issues
+            Menu, Tray, Rename, Auto-Start Enabled, Disable Auto-Start
+        }
+    } else {
+        try {
+            Menu, Tray, Rename, Disable Auto-Start, Auto-Start with Windows
+        }
     }
     return
 
@@ -353,17 +359,31 @@ return
 
 ; Toggle auto-start
 ToggleAutoStart:
+    ; Fixed line 290: Improved registry handling with proper error checking
     if (autoStart)
     {
         autoStart := false
-        RegDelete, HKCU, Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro
+        ; Use try-catch for registry operations
+        try {
+            RegDelete, HKCU\Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro
+        } catch e {
+            ; Registry key might not exist, which is okay
+        }
         TrayTip, %AppName%, Auto-start disabled, 2, 2
     }
     else
     {
         autoStart := true
-        RegWrite, REG_SZ, HKCU, Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro, %A_ScriptFullPath%
-        TrayTip, %AppName%, Auto-start enabled, 2, 1
+        ; Quote the path to handle spaces properly
+        scriptPath := "\"". A_ScriptFullPath . "\""
+        try {
+            RegWrite, REG_SZ, HKCU\Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro, %scriptPath%
+            TrayTip, %AppName%, Auto-start enabled, 2, 1
+        } catch e {
+            ; Handle registry write failure
+            autoStart := false
+            TrayTip, %AppName%, Auto-start failed: Registry access denied, 3, 3
+        }
     }
     Gosub, UpdateAutoStartMenu
     Gosub, SaveSettings
