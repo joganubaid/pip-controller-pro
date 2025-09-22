@@ -209,8 +209,8 @@ SaveSettings:
     IniWrite, %isEnabled%, %settingsFile%, Settings, Enabled
     IniWrite, %autoStart%, %settingsFile%, Settings, AutoStart
     return
-; I
-nitialize system tray
+
+; Initialize system tray
 InitializeTray:
     global
     
@@ -367,8 +367,9 @@ ToggleAutoStart:
     }
     Gosub, UpdateAutoStartMenu
     Gosub, SaveSettings
-return; Transpa
-rency settings
+return
+
+; Transparency settings
 SetTransparency25:
     transparency := 25
     TrayTip, %AppName%, Transparency: Almost Invisible, 2, 1
