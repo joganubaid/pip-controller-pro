@@ -121,24 +121,17 @@ After installing or extracting:
 
 ## 🛠️ Build Options (For Developers)
 
+We provide a single, powerful build script:
+
 ```powershell
-# Show help
-.\build.ps1
+# Build everything (Installer and Portable - Recommended)
+.\build.ps1 -BuildAll
 
-# Install AutoHotkey only
-.\build.ps1 -InstallAHK
+# Build only the portable ZIP
+.\build.ps1 -BuildPortable
 
-# Build executable only (requires AutoHotkey)
-.\build.ps1 -Build
-
-# Install and build in one command
-.\build.ps1 -InstallAHK -Build
-
-# Create portable version
-.\make-portable.ps1
-
-# Create full distribution (requires Inno Setup)
-.\build-distribution.ps1 -BuildAll
+# Build only the installer
+.\build.ps1 -BuildInstaller
 ```
 
 ## 📁 Settings & Configuration
@@ -205,9 +198,7 @@ autoStart := false        ; Whether to start with Windows
 ## 📁 Files
 
 - `pip-controller.ahk` - Main AutoHotkey script
-- `build.ps1` - PowerShell build script
-- `build-distribution.ps1` - Distribution build script
-- `make-portable.ps1` - Portable version builder
+- `build.ps1` - Master build script
 - `installer.iss` - Inno Setup installer script
 - `pip-controller.exe` - Compiled executable (after build)
 - `README.md` - This documentation

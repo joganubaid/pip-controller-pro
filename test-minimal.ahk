@@ -1,5 +1,0 @@
-#NoEnv
-#SingleInstance Force
-
-MsgBox, Hello from PiP Controller!
-ExitApp

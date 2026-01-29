@@ -32,15 +32,15 @@ Thank you for your interest in contributing to PiP Controller Pro! We welcome co
 - PowerShell for build scripts
 
 ### Building
+### Building
 ```powershell
-# Install AutoHotkey and build executable
-.\build.ps1 -InstallAHK -Build
+# Build everything (Installer and Portable)
+.\build.ps1 -BuildAll
 
-# Create portable version
-.\make-portable.ps1
-
-# Create full distribution (requires Inno Setup)
-.\build-distribution.ps1 -BuildAll
+# Options:
+# -BuildPortable    : Build only the ZIP package
+# -BuildInstaller   : Build only the Setup exe
+# -Clean            : Clean previous builds
 ```
 
 ### Testing

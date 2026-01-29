@@ -1,64 +1,30 @@
-# Compiled executables (allow main exe for user downloads)
+# AutoHotkey
 *.exe
-!pip-controller.exe
+!pip-controller.exe.keep
+*.bin
+*.ahk.bak
 
-# Build directories
-temp/
+# Build Artifacts
 dist/
+temp/
+downloads/
+*.zip
+*.setup.exe
 
-# AutoHotkey compiled files
-*.ahk.exe
+# User Settings
+settings.ini
+*.ini
 
-# Windows thumbnails
-Thumbs.db
-ehthumbs.db
+# Logs and Crash Dumps
+*.log
+*.dmp
 
-# System files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-Icon?
-
-# IDE files
+# VS Code / Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# Log files
-*.log
-
-# Package files
-*.zip
-*.rar
-*.7z
-
-# Temporary files
-*.tmp
-*.temp
-
-# AutoHotkey specific
-*.ahk~
-
-# Windows Installer files
-*.msi
-*.msix
-*.appx
-
-# Backup files
-*.bak
-*.backup
-*_backup.*
-
-# Development test files
-*-test.ahk
-*-working.ahk
-pip-controller-test.ahk
-pip-controller-working.ahk
-
-# User settings and data
-%AppData%/PiPController/
-settings.ini
+# Windows
+Thumbs.db
+Desktop.ini

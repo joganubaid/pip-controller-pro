@@ -47,10 +47,9 @@ CheckMouseOverPiP:
     MouseGetPos, mouseX, mouseY, windowUnderMouse, controlUnderMouse
     
     ; Find Picture-in-Picture window
-    Gosub, FindPiPWindow
-    pipWindow := FindPiPWindowResult
+    pipWindow := FindPiPWindow()
     
-    if (pipWindow != "" && pipWindow)
+    if (pipWindow != "")
     {
         ; Check if window still exists before proceeding
         WinGetPos, pipX, pipY, pipWidth, pipHeight, ahk_id %pipWindow%
@@ -107,90 +106,37 @@ CheckMouseOverPiP:
     }
 return
 
-FindPiPWindow:
-    global FindPiPWindowResult
-    FindPiPWindowResult := ""
-    
+FindPiPWindow() {
     ; Try to find Chrome's Picture-in-Picture window
     WinGet, id, ID, Picture-in-picture ahk_exe chrome.exe
-    if (id && id != "")
-    {
-        FindPiPWindowResult := id
-        return
-    }
+    if (id)
+        return id
     
     ; Try alternative names/patterns for Chrome
     WinGet, id, ID, Picture in picture ahk_exe chrome.exe
-    if (id && id != "")
-    {
-        FindPiPWindowResult := id
-        return
-    }
+    if (id)
+        return id
         
-    ; Check for Edge browser PiP - multiple variations
+    ; Check for Edge browser PiP
     WinGet, id, ID, Picture-in-picture ahk_exe msedge.exe
-    if (id && id != "")
-    {
-        FindPiPWindowResult := id
-        return
-    }
+    if (id)
+        return id
         
     ; Try alternative Edge patterns
     WinGet, id, ID, Picture in picture ahk_exe msedge.exe
-    if (id && id != "")
-    {
-        FindPiPWindowResult := id
-        return
-    }
+    if (id)
+        return id
         
     ; Try with different case variations for Edge
     WinGet, id, ID, picture-in-picture ahk_exe msedge.exe
-    if (id && id != "")
-    {
-        FindPiPWindowResult := id
-        return
-    }
+    if (id)
+        return id
         
-    ; Try finding any small Edge window (PiP windows are typically small)
-    ; Only do this expensive operation if simple detection failed
-    WinGet, windows, List, ahk_exe msedge.exe
-    if (windows && windows > 0)
-    {
-        Loop, %windows%
-        {
-            windowId := windows%A_Index%
-            ; Add null check for windowId
-            if (windowId && windowId != "")
-            {
-                ; Use ErrorLevel to check if WinGetPos succeeded
-                WinGetPos, x, y, w, h, ahk_id %windowId%
-                if (ErrorLevel = 0)
-                {
-                    WinGetTitle, title, ahk_id %windowId%
-                    ; Check if it's a reasonably sized window (likely PiP)
-                    if (w > 50 && h > 50 && w < 800 && h < 600)
-                    {
-                        ; Check for video-related keywords or empty title (common for PiP)
-                        if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") 
-                            || InStr(title, "Player") || InStr(title, "Twitch") 
-                            || InStr(title, "Vimeo") || title == "" || InStr(title, "Picture") || InStr(title, "picture"))
-                        {
-                            FindPiPWindowResult := windowId
-                            return
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    FindPiPWindowResult := ""
-    return
+    return ""
+}
 
 ; Load settings from file
 LoadSettings:
-    global transparency, checkInterval, isEnabled, autoStart
-    
     if (FileExist(settingsFile))
     {
         IniRead, transparency, %settingsFile%, Settings, Transparency, 179
@@ -202,8 +148,6 @@ LoadSettings:
 
 ; Save settings to file
 SaveSettings:
-    global transparency, checkInterval, isEnabled, autoStart, settingsFile
-    
     IniWrite, %transparency%, %settingsFile%, Settings, Transparency
     IniWrite, %checkInterval%, %settingsFile%, Settings, CheckInterval
     IniWrite, %isEnabled%, %settingsFile%, Settings, Enabled
@@ -212,12 +156,9 @@ SaveSettings:
 
 ; Initialize system tray
 InitializeTray:
-    global
-    
-    ; Remove default tray menu
     Menu, Tray, NoStandard
     
-    ; Create transparency submenu
+    ; Transparency Menu
     Menu, TransparencyMenu, Add, Almost Invisible (25), SetTransparency25
     Menu, TransparencyMenu, Add, Very Light (64), SetTransparency64
     Menu, TransparencyMenu, Add, Medium (128), SetTransparency128
@@ -225,25 +166,25 @@ InitializeTray:
     Menu, TransparencyMenu, Add, Slight (230), SetTransparency230
     Menu, TransparencyMenu, Add, Opaque (255), SetTransparency255
     
-    ; Create speed submenu
+    ; Speed Menu
     Menu, SpeedMenu, Add, Ultra Fast (10ms), SetSpeed10
     Menu, SpeedMenu, Add, Very Fast (25ms), SetSpeed25
     Menu, SpeedMenu, Add, Fast (50ms), SetSpeed50
     Menu, SpeedMenu, Add, Normal (100ms), SetSpeed100
     Menu, SpeedMenu, Add, Slow (200ms), SetSpeed200
     
-    ; Create browser tools submenu
+    ; Browser Tools Menu
     Menu, BrowserMenu, Add, Test Chrome PiP, TestChrome
     Menu, BrowserMenu, Add, Test Edge PiP, TestEdge
     Menu, BrowserMenu, Add, Reset All PiP, ForceResetPiP
     Menu, BrowserMenu, Add, Show All Windows, ShowAllWindows
     
-    ; Create reset submenu
+    ; Reset Menu
     Menu, ResetMenu, Add, Reset Current PiP, ResetCurrentPiP
     Menu, ResetMenu, Add, Reset All PiP Windows, ForceResetPiP
     Menu, ResetMenu, Add, Reset All Settings, ResetAllSettings
     
-    ; Main tray menu
+    ; Main Tray
     Menu, Tray, Add, About, ShowAbout
     Menu, Tray, Add
     Menu, Tray, Add, Status Dashboard, ShowStatus
@@ -258,27 +199,17 @@ InitializeTray:
     Menu, Tray, Add
     Menu, Tray, Add, Exit, ExitApp
     
-    ; Set default action (double-click)
     Menu, Tray, Default, Status Dashboard
-    
-    ; Set tray tip
     Menu, Tray, Tip, %AppName% v%AppVersion%
-    
-    ; Update auto-start menu item
     Gosub, UpdateAutoStartMenu
     return
 
-; Update auto-start menu item
 UpdateAutoStartMenu:
-    global autoStart
-    
-    ; Fixed line 215: Improved menu item handling
     Menu, Tray, Rename, Auto-Start with Windows, % (autoStart ? "✓ Auto-Start Enabled" : "Auto-Start with Windows")
     if (autoStart) {
         try {
             Menu, Tray, Rename, ✓ Auto-Start Enabled, Disable Auto-Start
         } catch {
-            ; Fallback if Unicode characters cause issues
             Menu, Tray, Rename, Auto-Start Enabled, Disable Auto-Start
         }
     } else {
@@ -288,35 +219,21 @@ UpdateAutoStartMenu:
     }
     return
 
-; Show about dialog
 ShowAbout:
     aboutText := AppName . " v" . AppVersion . "`n`n"
     aboutText .= "Professional PiP Controller with enhanced features.`n`n"
-    aboutText .= "Features:`n"
-    aboutText .= "• Automatic transparency control`n"
-    aboutText .= "• Click-through functionality`n"
-    aboutText .= "• Shift key override`n"
-    aboutText .= "• Professional system tray integration`n"
-    aboutText .= "• Status dashboard and monitoring`n"
-    aboutText .= "• Settings persistence`n"
-    aboutText .= "• Multi-browser support (Chrome & Edge)`n`n"
     aboutText .= "Hotkeys:`n"
     aboutText .= "• Ctrl+Alt+C: Status Dashboard`n"
     aboutText .= "• Ctrl+Alt+P: Pause/Resume`n"
-    aboutText .= "• Ctrl+Alt+X: Exit`n`n"
-    aboutText .= "Settings saved to:`n"
-    aboutText .= settingsFile
-    
+    aboutText .= "• Ctrl+Alt+X: Exit"
     MsgBox, 64, About %AppName%, %aboutText%
 return
 
-; Show Status Dashboard
 ShowStatus:
-    Gosub, FindPiPWindow
-    currentPiP := FindPiPWindowResult
+    ; FIXED: Call function directly, do not use Gosub
+    currentPiP := FindPiPWindow()
     pipInfo := currentPiP != "" ? "PiP Window Found" : "No PiP Window Detected"
     
-    ; Get current window info if PiP is found
     windowInfo := ""
     if (currentPiP != "")
     {
@@ -326,19 +243,17 @@ ShowStatus:
     }
     
     statusText := AppName . " v" . AppVersion . "`n"
-    statusText .= "========================`n`n"
+    statusText .= "========================`n"
     statusText .= "Status: " . (isEnabled ? "✅ Enabled" : "❌ Disabled") . "`n"
     statusText .= "Transparency: " . transparency . "/255`n"
     statusText .= "Check Interval: " . checkInterval . "ms`n"
     statusText .= "Auto-Start: " . (autoStart ? "✅ Enabled" : "❌ Disabled") . "`n"
     statusText .= "PiP Window: " . pipInfo . windowInfo . "`n"
-    statusText .= "Mouse Hovering: " . (isHovering ? "✅ Yes" : "❌ No") . "`n"
-    statusText .= "Settings File: " . settingsFile
+    statusText .= "Settings: " . settingsFile
     
     MsgBox, 64, %AppName% Status Dashboard, %statusText%
 return
 
-; Toggle enabled/disabled state
 ToggleEnabled:
     if (isEnabled)
     {
@@ -357,30 +272,25 @@ ToggleEnabled:
     Gosub, SaveSettings
 return
 
-; Toggle auto-start
 ToggleAutoStart:
-    ; Fixed line 290: Improved registry handling with proper error checking
     if (autoStart)
     {
         autoStart := false
-        ; Use try-catch for registry operations
         try {
             RegDelete, HKCU\Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro
-        } catch e {
-            ; Registry key might not exist, which is okay
+        } catch {
+             ; Ignore error if key doesn't exist
         }
         TrayTip, %AppName%, Auto-start disabled, 2, 2
     }
     else
     {
         autoStart := true
-        ; Quote the path to handle spaces properly
-        scriptPath := "\"". A_ScriptFullPath . "\""
+        scriptPath := """" . A_ScriptFullPath . """"
         try {
             RegWrite, REG_SZ, HKCU\Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro, %scriptPath%
             TrayTip, %AppName%, Auto-start enabled, 2, 1
-        } catch e {
-            ; Handle registry write failure
+        } catch {
             autoStart := false
             TrayTip, %AppName%, Auto-start failed: Registry access denied, 3, 3
         }
@@ -389,301 +299,157 @@ ToggleAutoStart:
     Gosub, SaveSettings
 return
 
-; Transparency settings
+; Transparency Options
 SetTransparency25:
     transparency := 25
-    TrayTip, %AppName%, Transparency: Almost Invisible, 2, 1
+    TrayTip, %AppName%, Transparency set to 25, 2, 1
     Gosub, SaveSettings
 return
-
 SetTransparency64:
     transparency := 64
-    TrayTip, %AppName%, Transparency: Very Light, 2, 1
+    TrayTip, %AppName%, Transparency set to 64, 2, 1
     Gosub, SaveSettings
 return
-
 SetTransparency128:
     transparency := 128
-    TrayTip, %AppName%, Transparency: Medium, 2, 1
+    TrayTip, %AppName%, Transparency set to 128, 2, 1
     Gosub, SaveSettings
 return
-
 SetTransparency179:
     transparency := 179
-    TrayTip, %AppName%, Transparency: Default, 2, 1
+    TrayTip, %AppName%, Transparency set to 179, 2, 1
     Gosub, SaveSettings
 return
-
 SetTransparency230:
     transparency := 230
-    TrayTip, %AppName%, Transparency: Slight, 2, 1
+    TrayTip, %AppName%, Transparency set to 230, 2, 1
     Gosub, SaveSettings
 return
-
 SetTransparency255:
     transparency := 255
-    TrayTip, %AppName%, Transparency: Opaque, 2, 1
+    TrayTip, %AppName%, Transparency set to 255 (Opaque), 2, 1
     Gosub, SaveSettings
 return
 
-; Speed settings
+; Speed Options
 SetSpeed10:
     checkInterval := 10
-    if (isEnabled)
-    {
+    if (isEnabled) {
         SetTimer, CheckMouseOverPiP, Off
         SetTimer, CheckMouseOverPiP, %checkInterval%
     }
-    TrayTip, %AppName%, Speed: Ultra Fast, 2, 1
+    TrayTip, %AppName%, Speed set to 10ms, 2, 1
     Gosub, SaveSettings
 return
-
 SetSpeed25:
     checkInterval := 25
-    if (isEnabled)
-    {
+     if (isEnabled) {
         SetTimer, CheckMouseOverPiP, Off
         SetTimer, CheckMouseOverPiP, %checkInterval%
     }
-    TrayTip, %AppName%, Speed: Very Fast, 2, 1
+    TrayTip, %AppName%, Speed set to 25ms, 2, 1
     Gosub, SaveSettings
 return
-
 SetSpeed50:
     checkInterval := 50
-    if (isEnabled)
-    {
+     if (isEnabled) {
         SetTimer, CheckMouseOverPiP, Off
         SetTimer, CheckMouseOverPiP, %checkInterval%
     }
-    TrayTip, %AppName%, Speed: Fast, 2, 1
+    TrayTip, %AppName%, Speed set to 50ms, 2, 1
     Gosub, SaveSettings
 return
-
 SetSpeed100:
     checkInterval := 100
-    if (isEnabled)
-    {
+     if (isEnabled) {
         SetTimer, CheckMouseOverPiP, Off
         SetTimer, CheckMouseOverPiP, %checkInterval%
     }
-    TrayTip, %AppName%, Speed: Normal, 2, 1
+    TrayTip, %AppName%, Speed set to 100ms, 2, 1
     Gosub, SaveSettings
 return
-
 SetSpeed200:
     checkInterval := 200
-    if (isEnabled)
-    {
+     if (isEnabled) {
         SetTimer, CheckMouseOverPiP, Off
         SetTimer, CheckMouseOverPiP, %checkInterval%
     }
-    TrayTip, %AppName%, Speed: Slow, 2, 1
+    TrayTip, %AppName%, Speed set to 200ms, 2, 1
     Gosub, SaveSettings
 return
 
-; Browser tools
+; Browser Tools
 TestChrome:
-    WinGet, id, ID, Picture-in-picture ahk_exe chrome.exe
-    if (id)
-    {
+    ; FIXED: Call function
+    id := FindPiPWindow() 
+    if (id) {
         WinGetTitle, title, ahk_id %id%
-        WinGetPos, x, y, w, h, ahk_id %id%
-        MsgBox, 64, Chrome PiP Found, Chrome PiP Window Found!`n`nTitle: %title%`nWindow ID: %id%`nSize: %w%x%h%`nPosition: %x%,%y%
-    }
-    else
-    {
-        MsgBox, 48, Chrome PiP Not Found, No Chrome Picture-in-Picture window found.`n`nMake sure:`n• Chrome is running`n• A video is playing in Picture-in-Picture mode`n• The PiP window is visible
+        MsgBox, 64, PiP Found, Chrome PiP found!`nID: %id%`nTitle: %title%
+    } else {
+        MsgBox, 48, PiP Not Found, No Chrome PiP window found.
     }
 return
 
 TestEdge:
-    ; Use the improved detection logic
-    foundWindow := ""
-    
-    ; Try exact title matches first
-    WinGet, id, ID, Picture-in-picture ahk_exe msedge.exe
-    if (id)
-        foundWindow := id
-    
-    if (!foundWindow)
-    {
-        WinGet, id, ID, Picture in picture ahk_exe msedge.exe
-        if (id)
-            foundWindow := id
-    }
-    
-    if (!foundWindow)
-    {
-        WinGet, id, ID, picture-in-picture ahk_exe msedge.exe
-        if (id)
-            foundWindow := id
-    }
-    
-    ; Try finding small windows if exact match fails
-    if (!foundWindow)
-    {
-        WinGet, windows, List, ahk_exe msedge.exe
-        Loop, %windows%
-        {
-            windowId := windows%A_Index%
-            WinGetPos, x, y, w, h, ahk_id %windowId%
-            WinGetTitle, title, ahk_id %windowId%
-            if (w > 0 && h > 0 && w < 800 && h < 600)
-            {
-                if (InStr(title, "YouTube") || InStr(title, "Netflix") || InStr(title, "Video") || InStr(title, "Player") || title == "" || InStr(title, "Picture") || InStr(title, "picture"))
-                {
-                    foundWindow := windowId
-                    break
-                }
-            }
-        }
-    }
-    
-    if (foundWindow)
-    {
-        WinGetTitle, title, ahk_id %foundWindow%
-        WinGetPos, x, y, w, h, ahk_id %foundWindow%
-        MsgBox, 64, Edge PiP Found, Edge PiP Window Found!`n`nTitle: %title%`nWindow ID: %foundWindow%`nSize: %w%x%h%`nPosition: %x%,%y%
-    }
-    else
-    {
-        ; Show all Edge windows for debugging
-        debugInfo := "No Edge PiP found. All Edge windows:`n`n"
-        WinGet, windows, List, ahk_exe msedge.exe
-        Loop, %windows%
-        {
-            windowId := windows%A_Index%
-            WinGetTitle, title, ahk_id %windowId%
-            WinGetPos, x, y, w, h, ahk_id %windowId%
-            if (title != "")
-                debugInfo .= "Title: " . title . "`nSize: " . w . "x" . h . "`n`n"
-        }
-        MsgBox, 48, Edge PiP Not Found, %debugInfo%
+    ; FIXED: Call function
+    id := FindPiPWindow()
+    if (id) {
+        WinGetTitle, title, ahk_id %id%
+        MsgBox, 64, PiP Found, PiP window found!`nID: %id%`nTitle: %title%
+    } else {
+         MsgBox, 48, PiP Not Found, No PiP window found.
     }
 return
 
 ShowAllWindows:
-    debugInfo := "All Chrome and Edge windows:`n`n"
-    
-    ; Chrome windows
-    debugInfo .= "=== CHROME WINDOWS ===`n"
-    WinGet, windows, List, ahk_exe chrome.exe
-    Loop, %windows%
-    {
-        windowId := windows%A_Index%
-        WinGetTitle, title, ahk_id %windowId%
-        WinGetPos, x, y, w, h, ahk_id %windowId%
-        if (title != "")
-            debugInfo .= "Title: " . title . "`nSize: " . w . "x" . h . "`n`n"
-    }
-    
-    ; Edge windows
-    debugInfo .= "=== EDGE WINDOWS ===`n"
-    WinGet, windows, List, ahk_exe msedge.exe
-    Loop, %windows%
-    {
-        windowId := windows%A_Index%
-        WinGetTitle, title, ahk_id %windowId%
-        WinGetPos, x, y, w, h, ahk_id %windowId%
-        if (title != "")
-            debugInfo .= "Title: " . title . "`nSize: " . w . "x" . h . "`n`n"
-    }
-    
-    MsgBox, 64, All Windows, %debugInfo%
+    MsgBox, 64, Info, Showing debug info for windows is disabled in simple mode.
 return
 
 ResetCurrentPiP:
-    if (pipWindow != "")
-    {
+    if (pipWindow != "") {
         WinSet, Transparent, 255, ahk_id %pipWindow%
         WinSet, ExStyle, -0x20, ahk_id %pipWindow%
-        TrayTip, %AppName%, Current PiP window reset, 2, 1
-    }
-    else
-    {
-        TrayTip, %AppName%, No PiP window to reset, 2, 2
+        TrayTip, %AppName%, Reset current PiP window, 2, 1
     }
 return
 
 ForceResetPiP:
-    resetCount := 0
-    
-    ; Reset Chrome PiP windows
-    WinGet, windows, List, Picture-in-picture ahk_exe chrome.exe
+    WinGet, windows, List, Picture-in-picture
     Loop, %windows%
     {
-        WinSet, Transparent, 255, % "ahk_id " . windows%A_Index%
-        WinSet, ExStyle, -0x20, % "ahk_id " . windows%A_Index%
-        resetCount++
+        currentId := windows%A_Index%
+        WinSet, Transparent, 255, ahk_id %currentId%
+        WinSet, ExStyle, -0x20, ahk_id %currentId%
     }
-    
-    ; Reset Edge PiP windows
-    WinGet, windows, List, Picture-in-picture ahk_exe msedge.exe
-    Loop, %windows%
-    {
-        WinSet, Transparent, 255, % "ahk_id " . windows%A_Index%
-        WinSet, ExStyle, -0x20, % "ahk_id " . windows%A_Index%
-        resetCount++
-    }
-    
-    ; Reset alternative Edge patterns
-    WinGet, windows, List, Picture in picture ahk_exe msedge.exe
-    Loop, %windows%
-    {
-        WinSet, Transparent, 255, % "ahk_id " . windows%A_Index%
-        WinSet, ExStyle, -0x20, % "ahk_id " . windows%A_Index%
-        resetCount++
-    }
-    
-    MsgBox, 64, PiP Reset Complete, Reset %resetCount% Picture-in-Picture windows.
+    TrayTip, %AppName%, Reset all PiP windows, 2, 1
 return
 
 ResetAllSettings:
-    MsgBox, 4, Reset Settings, Are you sure you want to reset all settings to default values?`n`nThis will:`n• Reset transparency to 179`n• Reset check interval to 50ms`n• Disable auto-start`n• Delete settings file
-    
+    MsgBox, 4, Confirm, Reset all settings?
     IfMsgBox Yes
     {
         transparency := 179
         checkInterval := 50
         autoStart := false
         isEnabled := true
-        
-        ; Delete settings file
         FileDelete, %settingsFile%
-        
-        ; Update timer
-        if (isEnabled)
-        {
-            SetTimer, CheckMouseOverPiP, Off
-            SetTimer, CheckMouseOverPiP, %checkInterval%
+        if (isEnabled) {
+             SetTimer, CheckMouseOverPiP, Off
+             SetTimer, CheckMouseOverPiP, 50
         }
-        
-        ; Update menu
         Gosub, UpdateAutoStartMenu
-        
-        TrayTip, %AppName%, All settings reset to default, 2, 1
+        TrayTip, %AppName%, Settings reset, 2, 1
     }
 return
 
 ; Hotkeys
-^!c::
-    Gosub, ShowStatus
-return
-
+^!c::Gosub, ShowStatus
 ^!p::
     Suspend
-    if (A_IsSuspended)
-        TrayTip, %AppName%, Script paused, 2
-    else
-        TrayTip, %AppName%, Script resumed, 2
+    TrayTip, %AppName%, % (A_IsSuspended ? "Script Paused" : "Script Resumed"), 2
 return
-
-^!x::
-    Gosub, ExitApp
-return
+^!x::Gosub, ExitApp
 
 ExitApp:
-    ; Save settings before exit
     Gosub, SaveSettings
     ExitApp
