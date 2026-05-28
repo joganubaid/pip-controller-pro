@@ -73,10 +73,13 @@ jobs:
           }
           Write-Host "Version check OK: $version"
 
-      - name: Build (smoke)
+      # CI builds the portable zip only — installing Inno Setup would add ~30s
+      # to every PR for no extra coverage. The full -BuildAll is exercised by
+      # the release workflow on tag push.
+      - name: Build (smoke, portable only)
         shell: pwsh
         run: |
-          ./build.ps1 -BuildAll
+          ./build.ps1 -BuildPortable
           Get-ChildItem dist | Format-Table -AutoSize
 
       - name: Upload artifacts
@@ -86,6 +89,5 @@ jobs:
           path: |
             pip-controller.exe
             dist/*.zip
-            dist/*Setup*.exe
           if-no-files-found: warn
           retention-days: 14

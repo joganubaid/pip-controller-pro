@@ -1,5 +1,7 @@
 ; Read version from the single source of truth.
-#define VersionFileHandle FileOpen(SourcePath + "VERSION")
+; NB: ISPP's SourcePath has NO trailing backslash, so AddBackslash() is required —
+; otherwise FileOpen tries to read "<repodir>VERSION" and the build fails.
+#define VersionFileHandle FileOpen(AddBackslash(SourcePath) + "VERSION")
 #define AppVer Trim(FileRead(VersionFileHandle))
 #expr FileClose(VersionFileHandle)
 #undef VersionFileHandle
