@@ -1,5 +1,7 @@
-; PiP Controller Pro v2.1.0
+; PiP Controller Pro
 ; Professional Picture-in-Picture Window Controller with Enhanced Features
+; Version is read from the VERSION file at build time. Dev-run uses the
+; hardcoded AppVersion below as a fallback.
 
 #NoEnv
 #SingleInstance Force
@@ -10,7 +12,7 @@ CoordMode, Mouse, Screen
 
 ; Application info
 AppName := "PiP Controller Pro"
-AppVersion := "2.1.0"
+AppVersion := "2.2.0"
 
 ; Default settings
 transparency := 179
@@ -23,6 +25,11 @@ pipWindow := ""
 isHovering := false
 lastPiPWindow := ""
 settingsFile := A_AppData . "\PiPController\settings.ini"
+
+; Last-applied tray menu labels (track so Menu Rename has a known source key).
+; These MUST match the initial labels passed to Menu, Tray, Add in InitializeTray.
+enableMenuText := "Enable/Disable"
+autoStartMenuText := "Auto-Start with Windows"
 
 ; Create settings directory
 FileCreateDir, % A_AppData . "\PiPController"
@@ -107,31 +114,32 @@ CheckMouseOverPiP:
 return
 
 FindPiPWindow() {
-    ; Try to find Chrome's Picture-in-Picture window
-    WinGet, id, ID, Picture-in-picture ahk_exe chrome.exe
+    ; Chromium-family browsers all use the same "Picture-in-picture" window title.
+    chromiumExes := ["chrome.exe", "msedge.exe", "brave.exe", "vivaldi.exe", "opera.exe"]
+    For idx, exe in chromiumExes
+    {
+        WinGet, id, ID, Picture-in-picture ahk_exe %exe%
+        if (id)
+            return id
+        WinGet, id, ID, Picture in picture ahk_exe %exe%
+        if (id)
+            return id
+        WinGet, id, ID, picture-in-picture ahk_exe %exe%
+        if (id)
+            return id
+    }
+
+    ; Firefox: title varies (often just the video title), so use "contains" match
+    ; scoped to firefox.exe. Restore the original title match mode afterward.
+    prevMatchMode := A_TitleMatchMode
+    SetTitleMatchMode, 2
+    WinGet, id, ID, Picture-in-Picture ahk_exe firefox.exe
+    if (!id)
+        WinGet, id, ID, Picture in Picture ahk_exe firefox.exe
+    SetTitleMatchMode, %prevMatchMode%
     if (id)
         return id
-    
-    ; Try alternative names/patterns for Chrome
-    WinGet, id, ID, Picture in picture ahk_exe chrome.exe
-    if (id)
-        return id
-        
-    ; Check for Edge browser PiP
-    WinGet, id, ID, Picture-in-picture ahk_exe msedge.exe
-    if (id)
-        return id
-        
-    ; Try alternative Edge patterns
-    WinGet, id, ID, Picture in picture ahk_exe msedge.exe
-    if (id)
-        return id
-        
-    ; Try with different case variations for Edge
-    WinGet, id, ID, picture-in-picture ahk_exe msedge.exe
-    if (id)
-        return id
-        
+
     return ""
 }
 
@@ -177,7 +185,6 @@ InitializeTray:
     Menu, BrowserMenu, Add, Test Chrome PiP, TestChrome
     Menu, BrowserMenu, Add, Test Edge PiP, TestEdge
     Menu, BrowserMenu, Add, Reset All PiP, ForceResetPiP
-    Menu, BrowserMenu, Add, Show All Windows, ShowAllWindows
     
     ; Reset Menu
     Menu, ResetMenu, Add, Reset Current PiP, ResetCurrentPiP
@@ -201,20 +208,27 @@ InitializeTray:
     
     Menu, Tray, Default, Status Dashboard
     Menu, Tray, Tip, %AppName% v%AppVersion%
-    Gosub, UpdateAutoStartMenu
+    Gosub, UpdateMenuState
     return
 
-UpdateAutoStartMenu:
-    Menu, Tray, Rename, Auto-Start with Windows, % (autoStart ? "✓ Auto-Start Enabled" : "Auto-Start with Windows")
-    if (autoStart) {
+; Single source of truth for dynamic tray menu labels.
+; Tracks the last-applied text in globals so Menu, Tray, Rename always has the
+; correct source key — prevents the rename-drift bug where successive toggles
+; would silently fail because the source label no longer matched the menu.
+UpdateMenuState:
+    newEnableText := isEnabled ? "Disable" : "Enable"
+    if (newEnableText != enableMenuText) {
         try {
-            Menu, Tray, Rename, ✓ Auto-Start Enabled, Disable Auto-Start
-        } catch {
-            Menu, Tray, Rename, Auto-Start Enabled, Disable Auto-Start
+            Menu, Tray, Rename, %enableMenuText%, %newEnableText%
+            enableMenuText := newEnableText
         }
-    } else {
+    }
+
+    newAutoStartText := autoStart ? "Disable Auto-Start" : "Auto-Start with Windows"
+    if (newAutoStartText != autoStartMenuText) {
         try {
-            Menu, Tray, Rename, Disable Auto-Start, Auto-Start with Windows
+            Menu, Tray, Rename, %autoStartMenuText%, %newAutoStartText%
+            autoStartMenuText := newAutoStartText
         }
     }
     return
@@ -260,15 +274,14 @@ ToggleEnabled:
         isEnabled := false
         SetTimer, CheckMouseOverPiP, Off
         TrayTip, %AppName%, Application disabled, 2, 2
-        Menu, Tray, Rename, Enable/Disable, Enable
     }
     else
     {
         isEnabled := true
         SetTimer, CheckMouseOverPiP, %checkInterval%
         TrayTip, %AppName%, Application enabled, 2, 1
-        Menu, Tray, Rename, Enable/Disable, Disable
     }
+    Gosub, UpdateMenuState
     Gosub, SaveSettings
 return
 
@@ -295,7 +308,7 @@ ToggleAutoStart:
             TrayTip, %AppName%, Auto-start failed: Registry access denied, 3, 3
         }
     }
-    Gosub, UpdateAutoStartMenu
+    Gosub, UpdateMenuState
     Gosub, SaveSettings
 return
 
@@ -401,10 +414,6 @@ TestEdge:
     }
 return
 
-ShowAllWindows:
-    MsgBox, 64, Info, Showing debug info for windows is disabled in simple mode.
-return
-
 ResetCurrentPiP:
     if (pipWindow != "") {
         WinSet, Transparent, 255, ahk_id %pipWindow%
@@ -433,11 +442,14 @@ ResetAllSettings:
         autoStart := false
         isEnabled := true
         FileDelete, %settingsFile%
-        if (isEnabled) {
-             SetTimer, CheckMouseOverPiP, Off
-             SetTimer, CheckMouseOverPiP, 50
+        ; Also drop the autostart registry entry since we just turned the flag off
+        try {
+            RegDelete, HKCU\Software\Microsoft\Windows\CurrentVersion\Run, PiPControllerPro
         }
-        Gosub, UpdateAutoStartMenu
+        SetTimer, CheckMouseOverPiP, Off
+        if (isEnabled)
+            SetTimer, CheckMouseOverPiP, %checkInterval%
+        Gosub, UpdateMenuState
         TrayTip, %AppName%, Settings reset, 2, 1
     }
 return
@@ -445,8 +457,16 @@ return
 ; Hotkeys
 ^!c::Gosub, ShowStatus
 ^!p::
-    Suspend
-    TrayTip, %AppName%, % (A_IsSuspended ? "Script Paused" : "Script Resumed"), 2
+    Suspend, Permit                    ; this hotkey survives global Suspend, otherwise un-suspend is impossible
+    Suspend, Toggle
+    if (A_IsSuspended) {
+        SetTimer, CheckMouseOverPiP, Off   ; Suspend pauses hotkeys but not timers — toggle the timer explicitly
+        TrayTip, %AppName%, Script Paused, 2
+    } else {
+        if (isEnabled)
+            SetTimer, CheckMouseOverPiP, %checkInterval%
+        TrayTip, %AppName%, Script Resumed, 2
+    }
 return
 ^!x::Gosub, ExitApp
 
