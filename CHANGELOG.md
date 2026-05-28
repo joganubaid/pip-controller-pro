@@ -5,6 +5,24 @@ All notable changes to PiP Controller Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-05-28
+
+### Added
+- **In-app update check**: a new "Check for Updates" tray menu item, plus a silent automatic check 10 seconds after startup. Both hit `https://api.github.com/repos/joganubaid/pip-controller-pro/releases/latest`, compare semver, and surface a `TrayTip` when a newer version is available. The startup check is silent on success; the menu version always reports the result.
+- **Signed and checksummed release artifacts**: every release now ships with `SHA256SUMS.txt` and per-artifact Sigstore keyless signatures (`*.sigstore`). Verification instructions are in the new [`SIGNING.md`](SIGNING.md).
+- **CI startup smoke test**: every PR / push to `main` now boots the freshly-built `pip-controller.exe` and requires it to survive 5 seconds without crashing. Catches runtime regressions that pass the syntax check but blow up on first frame.
+- **`SECURITY.md`**: documents the supported version, scope, and the private-disclosure flow via GitHub Security Advisories.
+- **`.github/dependabot.yml`**: monthly bumps for the `github-actions` ecosystem so the SHA-pinned actions don't go stale.
+- **`.github/pull_request_template.md`**: structured PR description with a per-browser "tested on" checklist.
+
+### Changed
+- **CI / release workflows hardened**: all third-party actions are now SHA-pinned to their current major (`actions/checkout@v6`, `actions/upload-artifact@v7`, `softprops/action-gh-release@v3`, `sigstore/cosign-installer@v4`). Removes the Node 20 deprecation timeline and adds supply-chain integrity.
+- **`release.yml` permissions**: `id-token: write` added on the release job so cosign can use the GitHub OIDC issuer for keyless signing.
+- **`ci.yml` PSScriptAnalyzer step**: now prefers the copy preinstalled on the windows-2025 runner image and only falls back to PSGallery (with 3x retry + backoff) when the module is missing. Absorbs transient PSGallery flake.
+
+### Security
+- **Branch protection on `main`**: pushes now go through PRs, require the `Validate` CI check to pass, and disallow force-pushes / deletions. The maintainer can still hot-push when needed (admins are not enforced).
+
 ## [2.2.0] - 2026-05-28
 
 ### Added
