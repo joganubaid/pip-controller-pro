@@ -60,11 +60,16 @@ jobs:
             throw "Ahk2Exe missing after extract"
           }
 
-      # Inno Setup direct download (avoid relying on chocolatey being present on the runner).
-      - name: Install Inno Setup 6.3.3
+      # Inno Setup direct download from GitHub Releases (jrsoftware/issrc).
+      # NOT files.jrsoftware.org — they rotate older patch versions out and
+      # the URL 404s within months (run 26592519186 failed on this). The
+      # GitHub Releases mirror keeps every tag forever. 6.7.3 is the latest
+      # stable in the 6.x line; same major version means same install path
+      # (Inno Setup 6\ISCC.exe) and same silent-install flag support.
+      - name: Install Inno Setup 6.7.3
         shell: pwsh
         run: |
-          $url = "https://files.jrsoftware.org/is/6/innosetup-6.3.3.exe"
+          $url = "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe"
           $installer = Join-Path $env:RUNNER_TEMP "innosetup.exe"
           Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
           Start-Process -FilePath $installer -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-" -Wait
