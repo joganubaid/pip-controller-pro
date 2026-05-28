@@ -1,6 +1,6 @@
-# PiP Controller Pro v2.1.0
+# PiP Controller Pro v2.2.0
 
-🎬 **Professional Picture-in-Picture Window Controller**
+**Professional Picture-in-Picture Window Controller**
 
 A powerful Windows utility that enhances your Picture-in-Picture experience with automatic transparency, click-through functionality, and professional system tray integration.
 
@@ -8,24 +8,24 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows/)
 [![AutoHotkey](https://img.shields.io/badge/AutoHotkey-v1.1+-green.svg)](https://www.autohotkey.com/)
 
-![PiP Controller Pro](https://via.placeholder.com/800x400/2196F3/FFFFFF?text=PiP+Controller+Pro+v2.1.0)
+## What's New in v2.2.0
 
-## 🆕 What's New in v2.1.0
+- **Multi-browser support**: Brave, Vivaldi, Opera now fully supported (Chromium-based, same PiP behavior as Chrome). Firefox is supported on a best-effort basis.
+- **Per-browser test items**: the Browser Tools submenu now has a dedicated Test entry for each supported browser.
+- **Fixed `Ctrl+Alt+P`**: the pause hotkey previously did not actually stop the transparency loop and could not un-pause itself. Both bugs fixed.
+- **Fixed tray menu state**: toggling Enable/Disable or Auto-Start more than once now consistently updates the visible label.
+- **Fixed factory reset**: Reset All Settings now also removes the autostart registry entry that the previous "Enable autostart" wrote.
+- **CI/CD**: GitHub Actions workflows for syntax check, smoke build, and tag-triggered releases. Pushing `v*.*.*` builds and publishes the GitHub Release automatically.
+- **Single-source versioning**: a root `VERSION` file is now consumed by the build script and the installer.
 
-- **💾 Settings Persistence**: All settings automatically saved and restored between sessions
-- **🚀 Auto-Start Support**: Option to start with Windows automatically
-- **📊 Enhanced Status Dashboard**: Real-time monitoring with detailed window information
-- **🔧 Improved Edge Compatibility**: Better detection and handling of Microsoft Edge PiP windows
-- **🔄 Reset Options**: Multiple reset levels for troubleshooting
-- **🎯 Smart Detection**: Enhanced PiP window detection with fallback methods
-- **⚡ Performance Optimizations**: Better error handling and resource management
+See the full list in [CHANGELOG.md](CHANGELOG.md#220---2026-05-28).
 
-## ✨ Features
+## Features
 
 - **Automatic transparency**: Makes PiP windows semi-transparent when mouse hovers over them
 - **Click-through**: Allows clicking through the PiP window to interact with content behind it
 - **Shift override**: Hold Shift key to make the window fully opaque and interactive
-- **Multi-browser support**: Works with Chrome and Microsoft Edge
+- **Multi-browser support**: Chrome, Edge, Brave, Vivaldi, Opera (full), plus Firefox (best-effort)
 - **Settings persistence**: All preferences saved automatically
 - **Auto-start option**: Start with Windows automatically
 - **Professional system tray**: Complete control from your system tray
@@ -38,7 +38,7 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 ## 📥 Download & Install
 
 ### 🔧 Option 1: Portable Version (RECOMMENDED)
-**File:** [PiPControllerPro-v2.1.0-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.1.0/PiPControllerPro-v2.1.0-Portable.zip) (~3 MB)
+**File:** [PiPControllerPro-v2.2.0-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.0/PiPControllerPro-v2.2.0-Portable.zip) (~3 MB)
 
 ✅ **Choose this if you want:**
 - No installation required
@@ -74,7 +74,7 @@ After installing or extracting:
 
 1. **Launch the app** - It will appear in your system tray
 2. **Right-click the tray icon** → Access all settings and options
-3. **Open Chrome or Edge** and play any video (YouTube, Netflix, etc.)
+3. **Open any supported browser** (Chrome, Edge, Brave, Vivaldi, Opera, or Firefox) and play any video (YouTube, Netflix, etc.)
 4. **Right-click the video** → Select "Picture in picture"
 5. **Hover over the PiP window** → Watch it become transparent! ✨
 6. **Hold Shift while hovering** → Makes it fully opaque and clickable
@@ -108,11 +108,14 @@ After installing or extracting:
 - **Normal (100ms)** - Balanced performance
 - **Slow (200ms)** - Lower CPU usage
 
-### 🔧 Browser Tools
-- **Test Chrome PiP** - Check Chrome detection
-- **Test Edge PiP** - Check Edge detection
-- **Show All Windows** - Debug window list
-- **Reset All PiP** - Reset all PiP windows
+### Browser Tools
+- **Test Chrome PiP** — Detect a `chrome.exe` PiP window
+- **Test Edge PiP** — Detect an `msedge.exe` PiP window
+- **Test Brave PiP** — Detect a `brave.exe` PiP window
+- **Test Vivaldi PiP** — Detect a `vivaldi.exe` PiP window
+- **Test Opera PiP** — Detect an `opera.exe` PiP window
+- **Test Firefox PiP** — Detect a `firefox.exe` PiP window (best-effort title match)
+- **Reset All PiP** — Reset all detected Chromium-family PiP windows
 
 ### 🔄 Reset Options
 - **Reset Current PiP** - Reset active window
@@ -169,10 +172,10 @@ autoStart := false        ; Whether to start with Windows
 ## 🐛 Troubleshooting
 
 ### PiP Window Not Detected
-- Use **Browser Tools** → **Test Chrome PiP** or **Test Edge PiP**
-- Try **Show All Windows** to see available windows
+- Use **Browser Tools** → **Test <Browser> PiP** for the browser you're using
 - Restart the script after opening PiP mode
 - Check if the window title contains "Picture-in-picture"
+- Firefox: detection depends on the Firefox version exposing "Picture-in-Picture" in the window title; if your build doesn't, the script won't see the PiP window. Open an issue with your Firefox version.
 
 ### Script Not Working
 - Check if AutoHotkey is installed properly

@@ -45,7 +45,7 @@ Thank you for your interest in contributing to PiP Controller Pro! We welcome co
 
 ### Testing
 1. Test on multiple Windows versions
-2. Verify Chrome and Edge compatibility
+2. Verify compatibility with the supported browsers (Chrome, Edge, Brave, Vivaldi, Opera, Firefox)
 3. Test all transparency levels and speeds
 4. Ensure system tray functionality works
 5. Test settings persistence and auto-start functionality

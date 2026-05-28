@@ -25,8 +25,8 @@ If applicable, add screenshots to help explain your problem.
 
 **System Information:**
  - OS: [e.g. Windows 10, Windows 11]
- - Browser [e.g. Chrome, Edge]
- - PiP Controller Version [e.g. v2.0.0]
+ - Browser [e.g. Chrome, Edge, Brave, Vivaldi, Opera, Firefox] and version
+ - PiP Controller Version [e.g. v2.2.0]
 
 **Additional context**
 Add any other context about the problem here.

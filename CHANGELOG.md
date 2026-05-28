@@ -10,25 +10,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Multi-browser support**: Brave, Vivaldi, and Opera are now detected via their `*.exe` process names (they're Chromium-based with the same PiP window title as Chrome).
 - **Firefox support (best-effort)**: Firefox PiP windows are detected by scoping a "contains" title match to `firefox.exe`. Detection depends on the Firefox version exposing "Picture-in-Picture" in the window title.
-- **CI workflow** (`.github/workflows/ci.yml`): on every PR / push to `main`, AutoHotkey 1.1 is installed and `Ahk2Exe` runs against the script as a syntax check. PSScriptAnalyzer also runs against `build.ps1`.
-- **Release workflow** (`.github/workflows/release.yml`): pushing a `v*.*.*` tag triggers a Windows runner that installs AHK 1.1 + Inno Setup, builds the executable, the portable ZIP, and the installer, then attaches all three to a GitHub Release.
-- **`VERSION` file**: single source of truth for the version, consumed by `build.ps1` (patches the AHK source at build time and names the output artifacts) and `installer.iss` (read at preprocessor time).
+- **Per-browser Test menu items**: the Browser Tools submenu now has a dedicated `Test <Browser> PiP` entry for each supported browser. Each one verifies its specific target process instead of all of them returning "any PiP window found".
+- **`FindPiPWindowForExe(exe)` helper**: extracted from `FindPiPWindow()` so both the unified scan and per-browser test items share one detection path.
+- **CI workflow** (`.github/workflows/ci.yml`): on every PR / push to `main`, pinned AutoHotkey 1.1.37.02 is installed and `Ahk2Exe` runs against the script as a syntax check. PSScriptAnalyzer runs against `build.ps1`, the VERSION/AppVersion consistency is verified, and the portable build is smoke-tested.
+- **Release workflow** (`.github/workflows/release.yml`): pushing a `v*.*.*` tag triggers a Windows runner that installs AHK 1.1 + Inno Setup 6.3.3, builds the executable + portable zip + installer, extracts release notes from the matching `[<version>]` CHANGELOG section, and attaches everything to a GitHub Release.
+- **`VERSION` file**: single source of truth for the version, consumed by `build.ps1` (patches the AHK source's `AppVersion` line at build time and names the output artifacts) and `installer.iss` (read at preprocessor time via `AddBackslash(SourcePath) + "VERSION"`).
+- **`build.ps1` local-compiler fallback**: `Get-AhkCompiler` now also looks at `.ahk/Compiler/Ahk2Exe.exe` so contributors who drop the AutoHotkey 1.1 portable zip into `.ahk/` can build without a system-wide AHK install.
+- **`build.ps1` explicit `/base`**: `Get-AhkBase` finds the `.bin` next to `Ahk2Exe.exe` and passes it as `/base`. The portable AHK distribution does not ship with `Ahk2Exe.ini`, so Ahk2Exe's default-base lookup fails ("No default Base file specified" dialog). Passing it explicitly also makes the system-installed path more reproducible.
 
 ### Fixed
 - **`Ctrl+Alt+P` actually pauses now** (regression / never-worked bug): `Suspend` only disables hotkeys/hotstrings, not `SetTimer` — so the transparency loop kept running. The handler now toggles the timer explicitly, and `Suspend, Permit` makes the hotkey survive the suspend so it can also un-suspend itself.
 - **Tray menu rename drift**: `ToggleEnabled` / `ToggleAutoStart` previously did `Menu, Tray, Rename, Enable/Disable, …` against a label that had already been renamed on the first toggle, so subsequent toggles silently failed to update the visible label. Replaced with a single `UpdateMenuState` sub that tracks the last-applied label in script-level globals.
 - **`ResetAllSettings` left registry stale**: the "factory reset" turned the `autoStart` flag off but never removed the actual `HKCU\…\Run\PiPControllerPro` registry value the previous "enable autostart" wrote — so the app would still launch with Windows. Now also drops the registry value.
 - **`ResetAllSettings` did not refresh the menu labels**: now calls the unified `UpdateMenuState` sub.
+- **`TestChrome` / `TestEdge` were misnamed**: both handlers called the generic `FindPiPWindow()` so each reported "any browser PiP" instead of testing its specific target. Now each per-browser test scans only its own `ahk_exe`.
 - **`build.ps1` used `$args`**: this is a PowerShell automatic variable (the script's argument array). Renamed to `$compilerArgs`.
+- **`build.ps1 -BuildPortable` was not idempotent**: rerunning it failed because `[ZipFile]::CreateFromDirectory` refuses to overwrite. Now it removes the existing zip first and wipes the staging dir so prior builds don't leak files.
 
 ### Removed
 - **`Show All Windows` tray menu item**: the handler was a stub that opened a MsgBox saying "disabled in simple mode" — it had been advertised in the menu, README, and CHANGELOG without an implementation since v2.1.0. Removed for honesty; a real debug-window listing can be reintroduced later if there's demand.
+- **Old `.github/workflows/build.yml`**: superseded by `ci.yml` and `release.yml`. The old one used `https://www.autohotkey.com/download/ahk-install.exe` which now serves AutoHotkey v2 (which cannot compile v1 scripts), and pinned deprecated `actions/checkout@v3` / `actions/upload-artifact@v3`.
 
 ### Docs
-- README browser table no longer claims Firefox is "may work with modifications".
-- README dev-setup instructions removed the non-existent `build.ps1 -InstallAHK -Build` invocation.
-- `CONTRIBUTING.md` `github.com/yourusername/…` template placeholder corrected to the real repo URL.
+- README v2.2.0 header, "What's New in v2.2.0" section, browser-support table, Quick Start guide, Browser Tools listing, and download URLs all updated.
+- `CONTRIBUTING.md` `github.com/yourusername/…` template placeholder corrected to the real repo URL. Testing checklist expanded to all supported browsers.
 - `installer.iss` welcome screen no longer says the tool is "for controlling Chrome Picture-in-Picture windows" — broadened to all supported browsers.
+- `RELEASE_NOTES.md` rewritten for v2.2.0.
+- `.github/ISSUE_TEMPLATE/bug_report.md` browser list updated to include all supported browsers.
 
 ## [2.1.0] - 2026-01-29
 
@@ -148,9 +156,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Future Plans
 
-- **Firefox Support**: Add compatibility with Firefox browser
 - **Custom Transparency**: User-defined transparency levels
 - **Advanced Hotkeys**: More customizable hotkey options
 - **Plugin System**: Extensible architecture for additional features
 - **Multi-Monitor Support**: Enhanced multi-monitor compatibility
 - **Performance Monitoring**: Built-in performance metrics and optimization
+- **Document Picture-in-Picture (Chrome 116+)**: Detect the new always-on-top floating window introduced by the [Document PiP API](https://developer.chrome.com/docs/web-platform/document-picture-in-picture) (any JS-set title; not caught by the current title heuristic).
+- **Firefox detection robustness**: Firefox PiP titles vary across versions; investigate window-class or always-on-top heuristics to detect PiP windows whose title doesn't expose "Picture-in-Picture".
