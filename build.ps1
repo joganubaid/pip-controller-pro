@@ -16,14 +16,31 @@ $AppName = "PiPControllerPro"
 $distDir = Join-Path $scriptDir "dist"
 $tempDir = Join-Path $scriptDir "temp"
 
-# Function to get AHK compiler path
+# Function to get AHK compiler path. Checks system install first, then a
+# repo-local portable install at .ahk/Compiler/ — handy for contributors who
+# don't want a system-wide AutoHotkey install.
 function Get-AhkCompiler {
-    $compilerPath = "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe"
-    if (Test-Path $compilerPath) { return $compilerPath }
-    
-    $compilerPath = "C:\Program Files (x86)\AutoHotkey\Compiler\Ahk2Exe.exe"
-    if (Test-Path $compilerPath) { return $compilerPath }
-    
+    $candidates = @(
+        "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe",
+        "C:\Program Files (x86)\AutoHotkey\Compiler\Ahk2Exe.exe",
+        (Join-Path $scriptDir ".ahk\Compiler\Ahk2Exe.exe")
+    )
+    foreach ($p in $candidates) {
+        if (Test-Path $p) { return $p }
+    }
+    return $null
+}
+
+# Find the matching base .bin next to the compiler. Passing /base explicitly is
+# more reproducible than relying on Ahk2Exe's default-base lookup (which depends
+# on an Ahk2Exe.ini that the portable distribution does not ship with).
+function Get-AhkBase {
+    param([Parameter(Mandatory = $true)][string] $compilerPath)
+    $dir = Split-Path -Parent $compilerPath
+    foreach ($name in @("Unicode 64-bit.bin","Unicode 32-bit.bin","ANSI 32-bit.bin")) {
+        $candidate = Join-Path $dir $name
+        if (Test-Path $candidate) { return $candidate }
+    }
     return $null
 }
 
@@ -59,13 +76,17 @@ if ($needsRestore) {
 }
 
 try {
-    # Simple compilation command - NO custom base, rely on defaults.
     # Use $compilerArgs (not $args — that's a PowerShell automatic variable).
     $compilerArgs = "/in `"$ahkScript`" /out `"$ahkExe`""
-    Start-Process -FilePath $compiler -ArgumentList $compilerArgs -Wait -NoNewWindow
-
-    if (-not (Test-Path $ahkExe)) {
-        Write-Host "Compilation failed." -ForegroundColor Red
+    $base = Get-AhkBase -compilerPath $compiler
+    if ($base) {
+        $compilerArgs = "$compilerArgs /base `"$base`""
+    } else {
+        Write-Host "No base .bin found next to Ahk2Exe — falling back to Ahk2Exe default." -ForegroundColor Yellow
+    }
+    $proc = Start-Process -FilePath $compiler -ArgumentList $compilerArgs -Wait -NoNewWindow -PassThru
+    if ($proc.ExitCode -ne 0 -or -not (Test-Path $ahkExe)) {
+        Write-Host "Compilation failed (Ahk2Exe exit=$($proc.ExitCode))." -ForegroundColor Red
         exit 1
     }
     Write-Host "Executable built." -ForegroundColor Green
@@ -80,11 +101,15 @@ finally {
 if ($BuildPortable -or $BuildAll) {
     Write-Host "Creating portable..." -ForegroundColor Yellow
     $portableDir = Join-Path $tempDir "Portable"
+    # Wipe the staging dir so previous builds don't leak stale files into the zip.
+    if (Test-Path $portableDir) { Remove-Item $portableDir -Recurse -Force }
     New-Item -ItemType Directory -Path $portableDir -Force | Out-Null
-    Copy-Item $ahkExe $portableDir
-    Copy-Item "$scriptDir\README.md" $portableDir
-    
+    Copy-Item $ahkExe $portableDir -Force
+    Copy-Item "$scriptDir\README.md" $portableDir -Force
+
     $zipPath = Join-Path $distDir "$AppName-v$Version-Portable.zip"
+    # ZipFile.CreateFromDirectory does not overwrite — delete first if rerunning.
+    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::CreateFromDirectory($portableDir, $zipPath)
     Write-Host "Portable zip created." -ForegroundColor Green
@@ -97,7 +122,7 @@ if ($BuildInstaller -or $BuildAll) {
     if (-not (Test-Path $iscc)) {
         $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
     }
-    
+
     if (Test-Path $iscc) {
         $iss = Join-Path $scriptDir "installer.iss"
         Start-Process -FilePath $iscc -ArgumentList "/Q `"$iss`"" -Wait -NoNewWindow
