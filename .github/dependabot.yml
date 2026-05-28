@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Keep workflow action pins current. We SHA-pin all third-party actions
+  # for supply-chain hardening — Dependabot opens a PR when a new release
+  # of any pinned action ships, so the pin doesn't go stale.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"

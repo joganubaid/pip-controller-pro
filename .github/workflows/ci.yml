@@ -17,7 +17,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      # Actions are SHA-pinned for supply-chain hardening; comment lists the
+      # human-readable tag so Dependabot can keep the pin current.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       # AutoHotkey 1.1 (legacy branch) is unmaintained; pinning to the last
       # released v1.1 version. We use the portable ZIP — NOT the installer:
@@ -100,8 +102,25 @@ jobs:
           ./build.ps1 -BuildPortable
           Get-ChildItem dist | Format-Table -AutoSize
 
+      # Startup smoke test: a compiled AHK script can be syntactically valid
+      # but blow up at runtime (missing global, bad COM call, settings parse).
+      # Launch the exe and verify it survives 5 seconds without crashing.
+      # No tray icon to interact with on a headless runner — just process liveness.
+      - name: Smoke test (app starts and stays running)
+        shell: pwsh
+        run: |
+          $proc = Start-Process -FilePath pip-controller.exe -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 5
+          if ($proc.HasExited) {
+            throw "App exited within 5 seconds (exit code $($proc.ExitCode)) — startup crashed."
+          }
+          Write-Host "PID $($proc.Id) survived 5s — startup OK"
+          Stop-Process -Id $proc.Id -Force
+          Start-Sleep -Seconds 1
+          Write-Host "App stopped cleanly."
+
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: pip-controller-build
           path: |
