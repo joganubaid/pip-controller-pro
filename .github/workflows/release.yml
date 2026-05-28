@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g. v2.2.0). Must already exist."
+        required: true
+        type: string
+
+permissions:
+  contents: write   # required for softprops/action-gh-release to create / update the release
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Resolve tag
+        id: tag
+        shell: pwsh
+        run: |
+          $tag = "${{ inputs.tag }}"
+          if (-not $tag) { $tag = "${{ github.ref_name }}" }
+          $version = $tag.TrimStart('v')
+          "tag=$tag"           | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "version=$version"   | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "tag=$tag version=$version"
+
+      - name: Verify VERSION matches tag
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          $expected = "${{ steps.tag.outputs.version }}"
+          if ($version -ne $expected) {
+            throw "VERSION file ($version) does not match tag ($expected). Bump VERSION before tagging."
+          }
+
+      - name: Install AutoHotkey 1.1.37.02
+        shell: pwsh
+        run: |
+          $url = "https://www.autohotkey.com/download/1.1/AutoHotkey_1.1.37.02_setup.exe"
+          $installer = Join-Path $env:RUNNER_TEMP "ahk-setup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          Start-Process -FilePath $installer -ArgumentList "/S" -Wait
+          if (-not (Test-Path "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe")) {
+            throw "Ahk2Exe missing after install"
+          }
+
+      # Inno Setup direct download (avoid relying on chocolatey being present on the runner).
+      - name: Install Inno Setup 6.3.3
+        shell: pwsh
+        run: |
+          $url = "https://files.jrsoftware.org/is/6/innosetup-6.3.3.exe"
+          $installer = Join-Path $env:RUNNER_TEMP "innosetup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          Start-Process -FilePath $installer -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-" -Wait
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            throw "ISCC missing after install (expected $iscc)"
+          }
+
+      - name: Build all artifacts
+        shell: pwsh
+        run: |
+          ./build.ps1 -BuildAll
+          Get-ChildItem dist | Format-Table -AutoSize
+
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        shell: pwsh
+        run: |
+          $version = "${{ steps.tag.outputs.version }}"
+          $content = Get-Content CHANGELOG.md -Raw
+          $pattern = "(?ms)^## \[$([regex]::Escape($version))\][^\n]*\n(.*?)(?=^## \[|\Z)"
+          $m = [regex]::Match($content, $pattern)
+          if (-not $m.Success) {
+            Write-Host "::warning::No CHANGELOG section for $version; release body will be empty"
+            $body = ""
+          } else {
+            $body = $m.Groups[1].Value.Trim()
+          }
+          $delim = "EOF_NOTES_$([guid]::NewGuid())"
+          "body<<$delim"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $body           | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $delim          | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      # softprops/action-gh-release is tag-pinned (@v2). We're trading absolute supply-chain
+      # immutability for ergonomics — switch to a commit SHA pin if that's a concern.
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "PiP Controller Pro ${{ steps.tag.outputs.tag }}"
+          body: ${{ steps.notes.outputs.body }}
+          fail_on_unmatched_files: true
+          files: |
+            pip-controller.exe
+            dist/PiPControllerPro-v${{ steps.tag.outputs.version }}-Portable.zip
+            dist/PiPControllerPro-v${{ steps.tag.outputs.version }}-Setup.exe
