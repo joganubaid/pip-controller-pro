@@ -113,34 +113,54 @@ CheckMouseOverPiP:
     }
 return
 
-FindPiPWindow() {
-    ; Chromium-family browsers all use the same "Picture-in-picture" window title.
-    chromiumExes := ["chrome.exe", "msedge.exe", "brave.exe", "vivaldi.exe", "opera.exe"]
-    For idx, exe in chromiumExes
-    {
-        WinGet, id, ID, Picture-in-picture ahk_exe %exe%
-        if (id)
-            return id
-        WinGet, id, ID, Picture in picture ahk_exe %exe%
-        if (id)
-            return id
-        WinGet, id, ID, picture-in-picture ahk_exe %exe%
-        if (id)
-            return id
-    }
-
-    ; Firefox: title varies (often just the video title), so use "contains" match
-    ; scoped to firefox.exe. Restore the original title match mode afterward.
-    prevMatchMode := A_TitleMatchMode
-    SetTitleMatchMode, 2
-    WinGet, id, ID, Picture-in-Picture ahk_exe firefox.exe
-    if (!id)
-        WinGet, id, ID, Picture in Picture ahk_exe firefox.exe
-    SetTitleMatchMode, %prevMatchMode%
+; Find a PiP window owned by a specific browser process. Returns the window ID
+; or 0/empty if none. Per-browser handler so the "Test <Browser> PiP" menu
+; items can each verify only their target browser, not just any PiP.
+FindPiPWindowForExe(exe) {
+    ; Chromium-family pattern (Chrome, Edge, Brave, Vivaldi, Opera all use this title).
+    WinGet, id, ID, Picture-in-picture ahk_exe %exe%
+    if (id)
+        return id
+    WinGet, id, ID, Picture in picture ahk_exe %exe%
+    if (id)
+        return id
+    WinGet, id, ID, picture-in-picture ahk_exe %exe%
     if (id)
         return id
 
+    ; Firefox uses variable titles, so "contains" match scoped to firefox.exe.
+    ; Save and restore TitleMatchMode so we don't leak state to other callers.
+    if (exe = "firefox.exe") {
+        prevMatchMode := A_TitleMatchMode
+        SetTitleMatchMode, 2
+        WinGet, id, ID, Picture-in-Picture ahk_exe firefox.exe
+        if (!id)
+            WinGet, id, ID, Picture in Picture ahk_exe firefox.exe
+        SetTitleMatchMode, %prevMatchMode%
+    }
+    return id
+}
+
+FindPiPWindow() {
+    supportedExes := ["chrome.exe", "msedge.exe", "brave.exe", "vivaldi.exe", "opera.exe", "firefox.exe"]
+    For idx, exe in supportedExes {
+        id := FindPiPWindowForExe(exe)
+        if (id)
+            return id
+    }
     return ""
+}
+
+; Shared body for the per-browser "Test <Browser> PiP" tray items.
+TestPiPForBrowser(exe, browserName) {
+    global AppName
+    id := FindPiPWindowForExe(exe)
+    if (id) {
+        WinGetTitle, title, ahk_id %id%
+        MsgBox, 64, %browserName% PiP Found, %browserName% PiP detected!`n`nWindow ID: %id%`nTitle: %title%`nProcess: %exe%
+    } else {
+        MsgBox, 48, %browserName% PiP Not Found, No PiP window found for %browserName% (%exe%).`n`nMake sure %browserName% is running and a video is playing in Picture-in-Picture mode.
+    }
 }
 
 ; Load settings from file
@@ -181,9 +201,15 @@ InitializeTray:
     Menu, SpeedMenu, Add, Normal (100ms), SetSpeed100
     Menu, SpeedMenu, Add, Slow (200ms), SetSpeed200
     
-    ; Browser Tools Menu
+    ; Browser Tools Menu — one Test item per supported browser so each test
+    ; verifies its specific target instead of "any browser with a PiP open".
     Menu, BrowserMenu, Add, Test Chrome PiP, TestChrome
     Menu, BrowserMenu, Add, Test Edge PiP, TestEdge
+    Menu, BrowserMenu, Add, Test Brave PiP, TestBrave
+    Menu, BrowserMenu, Add, Test Vivaldi PiP, TestVivaldi
+    Menu, BrowserMenu, Add, Test Opera PiP, TestOpera
+    Menu, BrowserMenu, Add, Test Firefox PiP, TestFirefox
+    Menu, BrowserMenu, Add
     Menu, BrowserMenu, Add, Reset All PiP, ForceResetPiP
     
     ; Reset Menu
@@ -391,27 +417,29 @@ SetSpeed200:
     Gosub, SaveSettings
 return
 
-; Browser Tools
+; Browser Tools — each test handler scans only its target browser.
 TestChrome:
-    ; FIXED: Call function
-    id := FindPiPWindow() 
-    if (id) {
-        WinGetTitle, title, ahk_id %id%
-        MsgBox, 64, PiP Found, Chrome PiP found!`nID: %id%`nTitle: %title%
-    } else {
-        MsgBox, 48, PiP Not Found, No Chrome PiP window found.
-    }
+    TestPiPForBrowser("chrome.exe", "Chrome")
 return
 
 TestEdge:
-    ; FIXED: Call function
-    id := FindPiPWindow()
-    if (id) {
-        WinGetTitle, title, ahk_id %id%
-        MsgBox, 64, PiP Found, PiP window found!`nID: %id%`nTitle: %title%
-    } else {
-         MsgBox, 48, PiP Not Found, No PiP window found.
-    }
+    TestPiPForBrowser("msedge.exe", "Edge")
+return
+
+TestBrave:
+    TestPiPForBrowser("brave.exe", "Brave")
+return
+
+TestVivaldi:
+    TestPiPForBrowser("vivaldi.exe", "Vivaldi")
+return
+
+TestOpera:
+    TestPiPForBrowser("opera.exe", "Opera")
+return
+
+TestFirefox:
+    TestPiPForBrowser("firefox.exe", "Firefox")
 return
 
 ResetCurrentPiP:
