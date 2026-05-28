@@ -47,6 +47,10 @@ if (isEnabled)
 ; Show startup notification
 TrayTip, %AppName%, %AppName% v%AppVersion% started successfully!, 3, 1
 
+; Defer the update check 10s so it never blocks tray-icon visibility on a
+; cold boot. Negative period = one-shot SetTimer.
+SetTimer, DoStartupUpdateCheck, -10000
+
 return
 
 CheckMouseOverPiP:
@@ -218,6 +222,7 @@ InitializeTray:
     
     ; Main Tray
     Menu, Tray, Add, About, ShowAbout
+    Menu, Tray, Add, Check for Updates, CheckForUpdatesMenu
     Menu, Tray, Add
     Menu, Tray, Add, Status Dashboard, ShowStatus
     Menu, Tray, Add
@@ -480,6 +485,69 @@ ResetAllSettings:
         TrayTip, %AppName%, Settings reset, 2, 1
     }
 return
+
+; --- Update check ---
+; Two entry points share one implementation: DoStartupUpdateCheck (scheduled
+; 10s after boot, silent unless there's an update) and CheckForUpdatesMenu
+; (tray menu item, always shows feedback). Both call RunUpdateCheck.
+
+DoStartupUpdateCheck:
+    SetTimer, DoStartupUpdateCheck, Off
+    RunUpdateCheck(true)
+    return
+
+CheckForUpdatesMenu:
+    RunUpdateCheck(false)
+    return
+
+RunUpdateCheck(silentIfCurrent) {
+    global AppName, AppVersion
+    try {
+        whr := ComObjCreate("MSXML2.XMLHTTP.6.0")
+        whr.Open("GET", "https://api.github.com/repos/joganubaid/pip-controller-pro/releases/latest", false)
+        whr.SetRequestHeader("User-Agent", AppName . "/" . AppVersion)
+        whr.SetRequestHeader("Accept", "application/vnd.github+json")
+        whr.Send()
+        ; Cache .Status into a plain var so we can use it in legacy TrayTip syntax.
+        httpStatus := whr.Status
+        if (httpStatus != 200) {
+            if (!silentIfCurrent)
+                TrayTip, %AppName%, Update check failed (HTTP %httpStatus%)., 4, 2
+            return
+        }
+        if !RegExMatch(whr.ResponseText, "U)""tag_name""\s*:\s*""v?([^""]+)""", m) {
+            if (!silentIfCurrent)
+                TrayTip, %AppName%, Update check failed (no tag in response)., 4, 2
+            return
+        }
+        latest := m1
+        cmp := CompareSemver(latest, AppVersion)
+        if (cmp > 0) {
+            TrayTip, %AppName% update available, v%latest% is out (you have v%AppVersion%).`nGet it at github.com/joganubaid/pip-controller-pro/releases/latest, 10, 1
+        } else if (!silentIfCurrent) {
+            TrayTip, %AppName%, You're on the latest version (v%AppVersion%)., 3, 1
+        }
+    } catch e {
+        if (!silentIfCurrent)
+            TrayTip, %AppName%, Update check failed (network)., 4, 2
+    }
+}
+
+; Returns 1 if a > b, -1 if a < b, 0 if equal. Compares the first 3
+; dot-separated numeric components; non-numeric suffixes are ignored.
+CompareSemver(a, b) {
+    StringSplit, ap, a, .
+    StringSplit, bp, b, .
+    Loop, 3 {
+        av := ap%A_Index% + 0
+        bv := bp%A_Index% + 0
+        if (av > bv)
+            return 1
+        if (av < bv)
+            return -1
+    }
+    return 0
+}
 
 ; Hotkeys
 ^!c::Gosub, ShowStatus
