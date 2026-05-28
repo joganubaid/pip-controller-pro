@@ -5,12 +5,12 @@ Thank you for your interest in contributing to PiP Controller Pro! We welcome co
 ## How to Contribute
 
 ### Reporting Bugs
-1. Check if the bug has already been reported in [Issues](https://github.com/yourusername/pip-controller/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/joganubaid/pip-controller-pro/issues)
 2. If not, create a new issue using the bug report template
 3. Provide detailed information about your system and steps to reproduce
 
 ### Suggesting Features
-1. Check existing [Issues](https://github.com/yourusername/pip-controller/issues) for similar requests
+1. Check existing [Issues](https://github.com/joganubaid/pip-controller-pro/issues) for similar requests
 2. Create a new issue using the feature request template
 3. Explain the use case and benefit of the feature
 

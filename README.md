@@ -160,9 +160,11 @@ autoStart := false        ; Whether to start with Windows
 
 ## 🌐 Browser Support
 
-- ✅ **Google Chrome** - Full support with enhanced detection
-- ✅ **Microsoft Edge** - Full support with improved compatibility
-- ❓ **Firefox** - May work with modifications (not tested)
+- ✅ **Google Chrome** - Full support
+- ✅ **Microsoft Edge** - Full support
+- ✅ **Brave** - Full support (Chromium-based, same PiP behavior as Chrome)
+- ✅ **Vivaldi / Opera** - Full support (Chromium-based)
+- 🟡 **Firefox** - Best-effort support via window-title heuristic. Detection depends on the Firefox version exposing "Picture-in-Picture" in the window title; if your build doesn't, the script won't see the PiP window. Open an issue if it doesn't work for you.
 
 ## 🐛 Troubleshooting
 
@@ -193,7 +195,7 @@ autoStart := false        ; Whether to start with Windows
 - **OS**: Windows 10/11 (Windows 7/8 may work)
 - **Memory**: Minimal (< 15 MB RAM usage)
 - **Permissions**: No administrator rights required
-- **Browsers**: Chrome, Edge (Firefox may work with modifications)
+- **Browsers**: Chrome, Edge, Brave, Vivaldi, Opera (full); Firefox (best-effort)
 
 ## 📁 Files
 
@@ -210,8 +212,8 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ### Development Setup
 1. Fork the repository
-2. Install AutoHotkey v1.1+
-3. Run `.\build.ps1 -InstallAHK -Build`
+2. Install AutoHotkey v1.1+ (the script uses v1 syntax — v2 will not run it)
+3. Run `.\build.ps1 -BuildAll` (or `-BuildPortable` / `-BuildInstaller` for a single artifact)
 4. Test thoroughly on Windows 10/11
 5. Submit a pull request
 

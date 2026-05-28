@@ -1,8 +1,14 @@
+; Read version from the single source of truth.
+#define VersionFileHandle FileOpen(SourcePath + "VERSION")
+#define AppVer Trim(FileRead(VersionFileHandle))
+#expr FileClose(VersionFileHandle)
+#undef VersionFileHandle
+
 [Setup]
 ; Basic app information
 AppName=PiP Controller Pro
-AppVersion=2.1.0
-AppVerName=PiP Controller Pro 2.1.0
+AppVersion={#AppVer}
+AppVerName=PiP Controller Pro {#AppVer}
 AppPublisher=joganubaid
 AppPublisherURL=https://github.com/joganubaid/pip-controller-pro
 AppSupportURL=https://github.com/joganubaid/pip-controller-pro/issues
@@ -14,7 +20,7 @@ LicenseFile=
 InfoBeforeFile=
 InfoAfterFile=
 OutputDir=dist
-OutputBaseFilename=PiPControllerPro-v2.1.0-Setup
+OutputBaseFilename=PiPControllerPro-v{#AppVer}-Setup
 SetupIconFile=
 Compression=lzma
 SolidCompression=yes
@@ -83,5 +89,5 @@ end;
 
 [Messages]
 ; Custom messages
-WelcomeLabel2=This will install [name/ver] on your computer.%n%nPiP Controller Pro is a professional utility for controlling Chrome Picture-in-Picture windows with transparency and click-through features.
+WelcomeLabel2=This will install [name/ver] on your computer.%n%nPiP Controller Pro is a professional utility for controlling browser Picture-in-Picture windows (Chrome, Edge, Brave, Vivaldi, Opera, and best-effort Firefox) with transparency and click-through features.
 FinishedLabel=Setup has finished installing [name] on your computer.%n%nThe application features:%n• Automatic transparency control%n• Click-through functionality%n• Professional system tray integration%n• Multiple preset configurations%n• Status monitoring dashboard

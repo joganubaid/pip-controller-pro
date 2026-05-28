@@ -5,9 +5,14 @@ param(
     [switch]$Clean = $false
 )
 
-$Version = "2.1.0"
-$AppName = "PiPControllerPro"
 $scriptDir = $PSScriptRoot
+$versionFile = Join-Path $scriptDir "VERSION"
+if (-not (Test-Path $versionFile)) {
+    Write-Host "VERSION file not found at $versionFile" -ForegroundColor Red
+    exit 1
+}
+$Version = (Get-Content $versionFile -Raw).Trim()
+$AppName = "PiPControllerPro"
 $distDir = Join-Path $scriptDir "dist"
 $tempDir = Join-Path $scriptDir "temp"
 
@@ -43,15 +48,33 @@ if (-not $compiler) {
     exit 1
 }
 
-# Simple compilation command - NO custom base, rely on defaults
-$args = "/in `"$ahkScript`" /out `"$ahkExe`""
-Start-Process -FilePath $compiler -ArgumentList $args -Wait -NoNewWindow
-
-if (-not (Test-Path $ahkExe)) {
-    Write-Host "Compilation failed." -ForegroundColor Red
-    exit 1
+# Patch the AppVersion line in the .ahk to match VERSION (single source of truth).
+# Always restored in finally so the working tree isn't dirtied on success or failure.
+$ahkBytes = [System.IO.File]::ReadAllBytes($ahkScript)
+$ahkText  = [System.Text.Encoding]::UTF8.GetString($ahkBytes)
+$patched  = [regex]::Replace($ahkText, 'AppVersion := "[^"]*"', "AppVersion := `"$Version`"")
+$needsRestore = ($patched -ne $ahkText)
+if ($needsRestore) {
+    [System.IO.File]::WriteAllText($ahkScript, $patched, [System.Text.UTF8Encoding]::new($false))
 }
-Write-Host "Executable built." -ForegroundColor Green
+
+try {
+    # Simple compilation command - NO custom base, rely on defaults.
+    # Use $compilerArgs (not $args — that's a PowerShell automatic variable).
+    $compilerArgs = "/in `"$ahkScript`" /out `"$ahkExe`""
+    Start-Process -FilePath $compiler -ArgumentList $compilerArgs -Wait -NoNewWindow
+
+    if (-not (Test-Path $ahkExe)) {
+        Write-Host "Compilation failed." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Executable built." -ForegroundColor Green
+}
+finally {
+    if ($needsRestore) {
+        [System.IO.File]::WriteAllBytes($ahkScript, $ahkBytes)
+    }
+}
 
 # Portable
 if ($BuildPortable -or $BuildAll) {

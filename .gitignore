@@ -3,6 +3,7 @@
 !pip-controller.exe.keep
 *.bin
 *.ahk.bak
+.ahk/
 
 # Build Artifacts
 dist/

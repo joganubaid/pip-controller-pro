@@ -5,6 +5,31 @@ All notable changes to PiP Controller Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-05-28
+
+### Added
+- **Multi-browser support**: Brave, Vivaldi, and Opera are now detected via their `*.exe` process names (they're Chromium-based with the same PiP window title as Chrome).
+- **Firefox support (best-effort)**: Firefox PiP windows are detected by scoping a "contains" title match to `firefox.exe`. Detection depends on the Firefox version exposing "Picture-in-Picture" in the window title.
+- **CI workflow** (`.github/workflows/ci.yml`): on every PR / push to `main`, AutoHotkey 1.1 is installed and `Ahk2Exe` runs against the script as a syntax check. PSScriptAnalyzer also runs against `build.ps1`.
+- **Release workflow** (`.github/workflows/release.yml`): pushing a `v*.*.*` tag triggers a Windows runner that installs AHK 1.1 + Inno Setup, builds the executable, the portable ZIP, and the installer, then attaches all three to a GitHub Release.
+- **`VERSION` file**: single source of truth for the version, consumed by `build.ps1` (patches the AHK source at build time and names the output artifacts) and `installer.iss` (read at preprocessor time).
+
+### Fixed
+- **`Ctrl+Alt+P` actually pauses now** (regression / never-worked bug): `Suspend` only disables hotkeys/hotstrings, not `SetTimer` — so the transparency loop kept running. The handler now toggles the timer explicitly, and `Suspend, Permit` makes the hotkey survive the suspend so it can also un-suspend itself.
+- **Tray menu rename drift**: `ToggleEnabled` / `ToggleAutoStart` previously did `Menu, Tray, Rename, Enable/Disable, …` against a label that had already been renamed on the first toggle, so subsequent toggles silently failed to update the visible label. Replaced with a single `UpdateMenuState` sub that tracks the last-applied label in script-level globals.
+- **`ResetAllSettings` left registry stale**: the "factory reset" turned the `autoStart` flag off but never removed the actual `HKCU\…\Run\PiPControllerPro` registry value the previous "enable autostart" wrote — so the app would still launch with Windows. Now also drops the registry value.
+- **`ResetAllSettings` did not refresh the menu labels**: now calls the unified `UpdateMenuState` sub.
+- **`build.ps1` used `$args`**: this is a PowerShell automatic variable (the script's argument array). Renamed to `$compilerArgs`.
+
+### Removed
+- **`Show All Windows` tray menu item**: the handler was a stub that opened a MsgBox saying "disabled in simple mode" — it had been advertised in the menu, README, and CHANGELOG without an implementation since v2.1.0. Removed for honesty; a real debug-window listing can be reintroduced later if there's demand.
+
+### Docs
+- README browser table no longer claims Firefox is "may work with modifications".
+- README dev-setup instructions removed the non-existent `build.ps1 -InstallAHK -Build` invocation.
+- `CONTRIBUTING.md` `github.com/yourusername/…` template placeholder corrected to the real repo URL.
+- `installer.iss` welcome screen no longer says the tool is "for controlling Chrome Picture-in-Picture windows" — broadened to all supported browsers.
+
 ## [2.1.0] - 2026-01-29
 
 ### Added
