@@ -45,15 +45,17 @@ jobs:
             throw "VERSION file ($version) does not match tag ($expected). Bump VERSION before tagging."
           }
 
-      - name: Install AutoHotkey 1.1.37.02
+      # AHK 1.1 portable ZIP — the v1.1 installer is a 7-Zip SFX that requires
+      # UAC and fails silently on hosted runners. See ci.yml for full rationale.
+      - name: Install AutoHotkey 1.1.37.02 (portable)
         shell: pwsh
         run: |
-          $url = "https://www.autohotkey.com/download/1.1/AutoHotkey_1.1.37.02_setup.exe"
-          $installer = Join-Path $env:RUNNER_TEMP "ahk-setup.exe"
-          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
-          Start-Process -FilePath $installer -ArgumentList "/S" -Wait
-          if (-not (Test-Path "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe")) {
-            throw "Ahk2Exe missing after install"
+          $url = "https://www.autohotkey.com/download/1.1/AutoHotkey_1.1.37.02.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "ahk.zip"
+          Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+          Expand-Archive -Path $zip -DestinationPath ".ahk" -Force
+          if (-not (Test-Path ".ahk\Compiler\Ahk2Exe.exe")) {
+            throw "Ahk2Exe missing after extract"
           }
 
       # Inno Setup direct download (avoid relying on chocolatey being present on the runner).
