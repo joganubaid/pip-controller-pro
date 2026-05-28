@@ -45,15 +45,20 @@ jobs:
           }
           Write-Host "Ahk2Exe ready"
 
+      # Ahk2Exe.exe is a GUI-subsystem app: invoking it with PowerShell's `&`
+      # returns immediately without populating $LASTEXITCODE, so the exit-code
+      # check fires before compilation finishes. Use Start-Process -Wait
+      # -PassThru (same pattern as build.ps1) to block until it really exits.
       - name: Syntax check (compile AHK script)
         shell: pwsh
         run: |
           $compiler = ".ahk\Compiler\Ahk2Exe.exe"
           $base     = ".ahk\Compiler\Unicode 64-bit.bin"
           $tmpExe   = Join-Path $env:RUNNER_TEMP "syntax-check.exe"
-          & $compiler /in pip-controller.ahk /out $tmpExe /base $base
-          if ($LASTEXITCODE -ne 0) {
-            throw "Ahk2Exe exited $LASTEXITCODE"
+          $compilerArgs = "/in pip-controller.ahk /out `"$tmpExe`" /base `"$base`""
+          $proc = Start-Process -FilePath $compiler -ArgumentList $compilerArgs -Wait -NoNewWindow -PassThru
+          if ($proc.ExitCode -ne 0) {
+            throw "Ahk2Exe exited $($proc.ExitCode)"
           }
           if (-not (Test-Path $tmpExe)) {
             throw "Ahk2Exe produced no output"
