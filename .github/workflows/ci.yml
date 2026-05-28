@@ -67,10 +67,35 @@ jobs:
           }
           Write-Host "OK: built $tmpExe ($((Get-Item $tmpExe).Length) bytes)"
 
+      # PSScriptAnalyzer ships preinstalled on the windows-2025 runner image,
+      # but PSGallery occasionally 404s on Install-Module — so prefer the
+      # preinstalled copy and only fall back to PSGallery (with retry) when
+      # the module isn't already available.
       - name: PSScriptAnalyzer on build.ps1
         shell: pwsh
         run: |
-          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Write-Host "PSScriptAnalyzer not preinstalled — pulling from PSGallery."
+            if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+              Register-PSRepository -Default
+            }
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            $attempt = 0
+            while ($true) {
+              $attempt++
+              try {
+                Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck -ErrorAction Stop
+                break
+              } catch {
+                if ($attempt -ge 3) { throw }
+                Write-Host "Install-Module attempt $attempt failed: $($_.Exception.Message). Retrying in 5s..."
+                Start-Sleep -Seconds 5
+              }
+            }
+          } else {
+            Write-Host "Using preinstalled PSScriptAnalyzer ($((Get-Module -ListAvailable -Name PSScriptAnalyzer | Select-Object -First 1).Version))."
+          }
+          Import-Module PSScriptAnalyzer
           $results = Invoke-ScriptAnalyzer -Path build.ps1 -Severity Information,Warning,Error
           if ($results) { $results | Format-Table -AutoSize | Out-String | Write-Host }
           $errors = @($results | Where-Object { $_.Severity -eq 'Error' })
