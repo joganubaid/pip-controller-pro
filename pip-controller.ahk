@@ -153,7 +153,6 @@ FindPiPWindow() {
 
 ; Shared body for the per-browser "Test <Browser> PiP" tray items.
 TestPiPForBrowser(exe, browserName) {
-    global AppName
     id := FindPiPWindowForExe(exe)
     if (id) {
         WinGetTitle, title, ahk_id %id%
