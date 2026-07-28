@@ -31,9 +31,12 @@ jobs:
       - name: Resolve tag
         id: tag
         shell: pwsh
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          $tag = "${{ inputs.tag }}"
-          if (-not $tag) { $tag = "${{ github.ref_name }}" }
+          $tag = $env:TAG_INPUT
+          if (-not $tag) { $tag = $env:REF_NAME }
           $version = $tag.TrimStart('v')
           "tag=$tag"           | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "version=$version"   | Out-File -FilePath $env:GITHUB_OUTPUT -Append
@@ -58,6 +61,13 @@ jobs:
           $url = "https://github.com/AutoHotkey/AutoHotkey/releases/download/v1.1.37.02/AutoHotkey_1.1.37.02.zip"
           $zip = Join-Path $env:RUNNER_TEMP "ahk.zip"
           Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+          # Pin the SHA256: this zip is executed in a job holding id-token:write
+          # (cosign). AHK 1.1.37.02 is the terminal v1.1 release, so the hash is
+          # permanently stable. Guards against a compromised upstream re-upload.
+          $expected = "6f3663f7cdd25063c8c8728f5d9b07813ced8780522fd1f124ba539e2854215f"
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() -ne $expected) {
+            throw "AutoHotkey zip SHA256 mismatch — refusing to run unverified compiler"
+          }
           Expand-Archive -Path $zip -DestinationPath ".ahk" -Force
           if (-not (Test-Path ".ahk\Compiler\Ahk2Exe.exe")) {
             throw "Ahk2Exe missing after extract"
@@ -75,6 +85,12 @@ jobs:
           $url = "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe"
           $installer = Join-Path $env:RUNNER_TEMP "innosetup.exe"
           Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          # Pin the SHA256 (same rationale as the AHK zip above): this installer
+          # runs elevated in the signing job. 6.7.3 is a fixed tag, hash is stable.
+          $expected = "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732"
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLower() -ne $expected) {
+            throw "Inno Setup SHA256 mismatch — refusing to run unverified installer"
+          }
           Start-Process -FilePath $installer -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-" -Wait
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) {

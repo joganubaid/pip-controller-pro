@@ -1,4 +1,4 @@
-# PiP Controller Pro v2.2.0
+# PiP Controller Pro v2.2.1
 
 **Professional Picture-in-Picture Window Controller**
 
@@ -7,18 +7,19 @@ A powerful Windows utility that enhances your Picture-in-Picture experience with
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows/)
 [![AutoHotkey](https://img.shields.io/badge/AutoHotkey-v1.1+-green.svg)](https://www.autohotkey.com/)
+[![CI](https://github.com/joganubaid/pip-controller-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/joganubaid/pip-controller-pro/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/joganubaid/pip-controller-pro)](https://github.com/joganubaid/pip-controller-pro/releases/latest)
 
-## What's New in v2.2.0
+## What's New in v2.2.1
 
-- **Multi-browser support**: Brave, Vivaldi, Opera now fully supported (Chromium-based, same PiP behavior as Chrome). Firefox is supported on a best-effort basis.
-- **Per-browser test items**: the Browser Tools submenu now has a dedicated Test entry for each supported browser.
-- **Fixed `Ctrl+Alt+P`**: the pause hotkey previously did not actually stop the transparency loop and could not un-pause itself. Both bugs fixed.
-- **Fixed tray menu state**: toggling Enable/Disable or Auto-Start more than once now consistently updates the visible label.
-- **Fixed factory reset**: Reset All Settings now also removes the autostart registry entry that the previous "Enable autostart" wrote.
-- **CI/CD**: GitHub Actions workflows for syntax check, smoke build, and tag-triggered releases. Pushing `v*.*.*` builds and publishes the GitHub Release automatically.
-- **Single-source versioning**: a root `VERSION` file is now consumed by the build script and the installer.
+- **In-app update check**: new "Check for Updates" tray item, plus a silent automatic check 10 seconds after startup.
+- **Signed and checksummed releases**: every artifact ships with `SHA256SUMS.txt` and Sigstore keyless signatures — see [SIGNING.md](SIGNING.md).
+- **CI startup smoke test**: every push boots the freshly-built exe and requires it to survive 5 seconds.
+- **Hardened CI/release pipeline**: all actions SHA-pinned, with Dependabot keeping them current.
 
-See the full list in [CHANGELOG.md](CHANGELOG.md#220---2026-05-28).
+Highlights from v2.2.0: multi-browser support (Brave, Vivaldi, Opera; Firefox best-effort), per-browser PiP test items, fixed `Ctrl+Alt+P` pause, fixed tray menu state, fixed factory reset, tag-triggered releases, single-source versioning.
+
+See the full list in [CHANGELOG.md](CHANGELOG.md).
 
 ## Features
 
@@ -38,7 +39,7 @@ See the full list in [CHANGELOG.md](CHANGELOG.md#220---2026-05-28).
 ## 📥 Download & Install
 
 ### 🔧 Option 1: Portable Version (RECOMMENDED)
-**File:** [PiPControllerPro-v2.2.0-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.0/PiPControllerPro-v2.2.0-Portable.zip) (~3 MB)
+**File:** [PiPControllerPro-v2.2.1-Portable.zip](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.1/PiPControllerPro-v2.2.1-Portable.zip) (~0.6 MB)
 
 ✅ **Choose this if you want:**
 - No installation required
@@ -54,7 +55,7 @@ See the full list in [CHANGELOG.md](CHANGELOG.md#220---2026-05-28).
 4. Done! No installation needed
 
 ### 📁 Option 2: Direct Executable
-**File:** [pip-controller.exe](https://github.com/joganubaid/pip-controller-pro/raw/main/pip-controller.exe) (~1.2 MB)
+**File:** [pip-controller.exe](https://github.com/joganubaid/pip-controller-pro/releases/latest/download/pip-controller.exe) (~1.2 MB)
 
 ✅ **Choose this if you want:**
 - Single file download
@@ -205,6 +206,9 @@ autoStart := false        ; Whether to start with Windows
 - `pip-controller.ahk` - Main AutoHotkey script
 - `build.ps1` - Master build script
 - `installer.iss` - Inno Setup installer script
+- `icon-gen.ps1` - Regenerates `assets/icon.ico` (run once if you change the icon)
+- `assets/icon.ico` - App/tray/installer icon (committed; consumed by `build.ps1` and `installer.iss`)
+- `VERSION` - Single source of truth for the version
 - `pip-controller.exe` - Compiled executable (after build)
 - `README.md` - This documentation
 - `LICENSE.txt` - MIT License

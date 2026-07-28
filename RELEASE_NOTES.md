@@ -1,4 +1,4 @@
-# PiP Controller Pro v2.2.0
+# PiP Controller Pro v2.2.1
 
 **Professional Picture-in-Picture Control for Windows**
 
@@ -8,32 +8,28 @@ Choose the version that fits your needs:
 
 | Type | File | Description |
 |------|------|-------------|
-| **Installer** (Recommended) | [**PiPControllerPro-v2.2.0-Setup.exe**](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.0/PiPControllerPro-v2.2.0-Setup.exe) | Easy installation, Start Menu shortcuts, uninstaller. |
-| **Portable** | [**PiPControllerPro-v2.2.0-Portable.zip**](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.0/PiPControllerPro-v2.2.0-Portable.zip) | No install needed. Extract and run `pip-controller.exe`. |
-| **Direct exe** | [**pip-controller.exe**](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.0/pip-controller.exe) | Single executable. Run directly. |
-| **Source Code** | [**Source Code (zip)**](https://github.com/joganubaid/pip-controller-pro/archive/refs/tags/v2.2.0.zip) | Raw AutoHotkey scripts for developers. |
+| **Installer** (Recommended) | [**PiPControllerPro-v2.2.1-Setup.exe**](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.1/PiPControllerPro-v2.2.1-Setup.exe) | Easy installation, Start Menu shortcuts, uninstaller. |
+| **Portable** | [**PiPControllerPro-v2.2.1-Portable.zip**](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.1/PiPControllerPro-v2.2.1-Portable.zip) | No install needed. Extract and run `pip-controller.exe`. |
+| **Direct exe** | [**pip-controller.exe**](https://github.com/joganubaid/pip-controller-pro/releases/download/v2.2.1/pip-controller.exe) | Single executable. Run directly. |
+| **Source Code** | [**Source Code (zip)**](https://github.com/joganubaid/pip-controller-pro/archive/refs/tags/v2.2.1.zip) | Raw AutoHotkey scripts for developers. |
+
+Every artifact ships with a SHA256 checksum (`SHA256SUMS.txt`) and a Sigstore keyless signature (`*.sigstore`). See [SIGNING.md](SIGNING.md) for verification.
 
 ---
 
-## What's New in v2.2.0
+## What's New in v2.2.1
 
 ### Added
-- **Brave, Vivaldi, Opera support** — all Chromium-based, same PiP behavior as Chrome.
-- **Best-effort Firefox support** — PiP windows detected via a "contains" title match scoped to `firefox.exe`.
-- **Per-browser Test items** — Browser Tools submenu now has a dedicated Test entry for each supported browser.
-- **GitHub Actions CI/CD** — push to `main` runs syntax check + smoke build; pushing a `v*.*.*` tag builds and publishes a GitHub Release automatically.
-- **`VERSION` file** — single source of truth for the version, consumed by both `build.ps1` and `installer.iss`.
+- **In-app update check** — new "Check for Updates" tray item, plus a silent automatic check 10 seconds after startup. Surfaces a TrayTip when a newer version is available.
+- **Signed and checksummed release artifacts** — every release now ships with `SHA256SUMS.txt` and per-artifact Sigstore keyless signatures (`*.sigstore`).
+- **CI startup smoke test** — every push boots the freshly-built exe and requires it to survive 5 seconds without crashing.
+- **`SECURITY.md`** — supported versions and private-disclosure flow via GitHub Security Advisories.
 
-### Fixed
-- **`Ctrl+Alt+P` actually pauses now** — previously `Suspend` did not stop the transparency timer and disabled the hotkey itself, so once paused there was no way to resume.
-- **Tray menu rename drift** — toggling Enable/Disable or Auto-Start more than once now consistently updates the visible label.
-- **Factory reset cleans the registry** — Reset All Settings now removes the autostart Run-key value.
-- **`$args` in `build.ps1`** — renamed (it's a PowerShell automatic variable).
+### Changed
+- **Hardened CI/release pipeline** — all third-party actions SHA-pinned; Dependabot keeps them current.
+- **`release.yml` permissions** — `id-token: write` added so cosign can use the GitHub OIDC issuer for keyless signing.
 
-### Removed
-- **Stub "Show All Windows" tray item** — handler was a MsgBox saying "disabled in simple mode". Removed for honesty; can return when implemented.
-
-See the full diff in [CHANGELOG.md](CHANGELOG.md#220---2026-05-28).
+See the full list in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

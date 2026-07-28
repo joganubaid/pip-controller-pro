@@ -32,7 +32,6 @@ Thank you for your interest in contributing to PiP Controller Pro! We welcome co
 - PowerShell for build scripts
 
 ### Building
-### Building
 ```powershell
 # Build everything (Installer and Portable)
 .\build.ps1 -BuildAll

@@ -20,10 +20,26 @@ checkInterval := 50
 isEnabled := true
 autoStart := false
 
+; Menu presets — single source of truth for the tray submenus, their click
+; handlers, and the current-selection checkmarks.
+transparencyPresets := [{name: "Almost Invisible (25)", value: 25}
+                       ,{name: "Very Light (64)", value: 64}
+                       ,{name: "Medium (128)", value: 128}
+                       ,{name: "Default (179)", value: 179}
+                       ,{name: "Slight (230)", value: 230}
+                       ,{name: "Opaque (255)", value: 255}]
+speedPresets := [{name: "Ultra Fast (10ms)", value: 10}
+                ,{name: "Very Fast (25ms)", value: 25}
+                ,{name: "Fast (50ms)", value: 50}
+                ,{name: "Normal (100ms)", value: 100}
+                ,{name: "Slow (200ms)", value: 200}]
+
 ; Variables
 pipWindow := ""
 isHovering := false
 lastPiPWindow := ""
+pipState := ""         ; "", "transparent", or "opaque" — last state applied to the PiP window
+pipAppliedValue := -1  ; transparency value last applied, so preset changes re-apply live
 settingsFile := A_AppData . "\PiPController\settings.ini"
 
 ; Last-applied tray menu labels (track so Menu Rename has a known source key).
@@ -56,64 +72,84 @@ return
 CheckMouseOverPiP:
     ; Get the mouse position
     MouseGetPos, mouseX, mouseY, windowUnderMouse, controlUnderMouse
-    
+
     ; Find Picture-in-Picture window
     pipWindow := FindPiPWindow()
-    
+
+    ; If detection moved to a different window (or none), restore the previous
+    ; one first — otherwise it stays transparent AND click-through forever, and
+    ; a click-through window can't even be clicked to recover it.
+    if (lastPiPWindow != "" && pipWindow != lastPiPWindow) {
+        RestorePiPWindow(lastPiPWindow)
+        isHovering := false
+        pipState := ""
+    }
+
     if (pipWindow != "")
     {
         ; Check if window still exists before proceeding
         WinGetPos, pipX, pipY, pipWidth, pipHeight, ahk_id %pipWindow%
-        
+
         ; Only proceed if WinGetPos succeeded (ErrorLevel = 0)
         if (ErrorLevel = 0 && pipWidth > 0 && pipHeight > 0)
         {
-            ; Check if mouse is over the PiP window
-            isMouseOverPiP := (mouseX >= pipX && mouseX <= pipX + pipWidth && mouseY >= pipY && mouseY <= pipY + pipHeight)
-            
+            ; Check if mouse is over the PiP window. A geometric hit alone is not
+            ; enough before click-through is applied — another window stacked on
+            ; top of the PiP would falsely trigger transparency — so also require
+            ; the window under the cursor to be the PiP itself. Once click-through
+            ; is active the PiP is invisible to MouseGetPos, so the geometric test
+            ; is all we have in that state.
+            isInRect := (mouseX >= pipX && mouseX <= pipX + pipWidth && mouseY >= pipY && mouseY <= pipY + pipHeight)
+            isMouseOverPiP := isInRect && (windowUnderMouse = pipWindow || pipState = "transparent")
+
             if (isMouseOverPiP)
             {
-                ; Check if Shift is pressed
+                ; Only call WinSet on state transitions (or when the transparency
+                ; preset changed) — not on every timer tick.
                 if (GetKeyState("Shift", "P"))
                 {
                     ; Make window fully opaque and clickable
-                    WinSet, Transparent, 255, ahk_id %pipWindow%
-                    WinSet, ExStyle, -0x20, ahk_id %pipWindow%   ; Remove click-through
+                    if (pipState != "opaque" || lastPiPWindow != pipWindow) {
+                        WinSet, Transparent, 255, ahk_id %pipWindow%
+                        WinSet, ExStyle, -0x20, ahk_id %pipWindow%   ; Remove click-through
+                        pipState := "opaque"
+                    }
                 }
                 else
                 {
                     ; Make window semi-transparent and click-through
-                    WinSet, Transparent, %transparency%, ahk_id %pipWindow%
-                    WinSet, ExStyle, +0x20, ahk_id %pipWindow%   ; Enable click-through
+                    if (pipState != "transparent" || pipAppliedValue != transparency || lastPiPWindow != pipWindow) {
+                        WinSet, Transparent, %transparency%, ahk_id %pipWindow%
+                        WinSet, ExStyle, +0x20, ahk_id %pipWindow%   ; Enable click-through
+                        pipState := "transparent"
+                        pipAppliedValue := transparency
+                    }
                 }
-                
-                if (!isHovering)
-                {
-                    isHovering := true
-                    lastPiPWindow := pipWindow
-                }
+
+                isHovering := true
+                lastPiPWindow := pipWindow
             }
             else if (isHovering)
             {
                 ; Reset to fully opaque when not hovering
-                WinSet, Transparent, 255, ahk_id %pipWindow%
-                WinSet, ExStyle, -0x20, ahk_id %pipWindow%   ; Remove click-through
+                RestorePiPWindow(pipWindow)
                 isHovering := false
+                pipState := ""
             }
         }
-        else
+        else if (isHovering)
         {
             ; Window no longer exists, reset hovering state
-            if (isHovering)
-            {
-                isHovering := false
-            }
+            isHovering := false
+            pipState := ""
+            lastPiPWindow := ""
         }
     }
     else if (isHovering)
     {
         ; No PiP window found, reset hovering state
         isHovering := false
+        pipState := ""
     }
 return
 
@@ -155,6 +191,17 @@ FindPiPWindow() {
     return ""
 }
 
+; Restore a PiP window to fully opaque and interactive. No-op for empty IDs
+; and windows that have already closed.
+RestorePiPWindow(id) {
+    if (id = "")
+        return
+    if (WinExist("ahk_id " . id)) {
+        WinSet, Transparent, 255, ahk_id %id%
+        WinSet, ExStyle, -0x20, ahk_id %id%
+    }
+}
+
 ; Shared body for the per-browser "Test <Browser> PiP" tray items.
 TestPiPForBrowser(exe, browserName) {
     id := FindPiPWindowForExe(exe)
@@ -189,20 +236,13 @@ SaveSettings:
 InitializeTray:
     Menu, Tray, NoStandard
     
-    ; Transparency Menu
-    Menu, TransparencyMenu, Add, Almost Invisible (25), SetTransparency25
-    Menu, TransparencyMenu, Add, Very Light (64), SetTransparency64
-    Menu, TransparencyMenu, Add, Medium (128), SetTransparency128
-    Menu, TransparencyMenu, Add, Default (179), SetTransparency179
-    Menu, TransparencyMenu, Add, Slight (230), SetTransparency230
-    Menu, TransparencyMenu, Add, Opaque (255), SetTransparency255
-    
-    ; Speed Menu
-    Menu, SpeedMenu, Add, Ultra Fast (10ms), SetSpeed10
-    Menu, SpeedMenu, Add, Very Fast (25ms), SetSpeed25
-    Menu, SpeedMenu, Add, Fast (50ms), SetSpeed50
-    Menu, SpeedMenu, Add, Normal (100ms), SetSpeed100
-    Menu, SpeedMenu, Add, Slow (200ms), SetSpeed200
+    ; Transparency Menu — built from the preset table at the top of the script
+    For i, p in transparencyPresets
+        Menu, TransparencyMenu, Add, % p.name, SetTransparencyPreset
+
+    ; Speed Menu — same pattern
+    For i, p in speedPresets
+        Menu, SpeedMenu, Add, % p.name, SetSpeedPreset
     
     ; Browser Tools Menu — one Test item per supported browser so each test
     ; verifies its specific target instead of "any browser with a PiP open".
@@ -239,6 +279,8 @@ InitializeTray:
     Menu, Tray, Default, Status Dashboard
     Menu, Tray, Tip, %AppName% v%AppVersion%
     Gosub, UpdateMenuState
+    UpdateMenuChecks("TransparencyMenu", transparencyPresets, transparency)
+    UpdateMenuChecks("SpeedMenu", speedPresets, checkInterval)
     return
 
 ; Single source of truth for dynamic tray menu labels.
@@ -303,6 +345,11 @@ ToggleEnabled:
     {
         isEnabled := false
         SetTimer, CheckMouseOverPiP, Off
+        ; Restore the window we were controlling — otherwise it stays
+        ; transparent and click-through while the app is disabled.
+        RestorePiPWindow(lastPiPWindow)
+        isHovering := false
+        pipState := ""
         TrayTip, %AppName%, Application disabled, 2, 2
     }
     else
@@ -342,84 +389,40 @@ ToggleAutoStart:
     Gosub, SaveSettings
 return
 
-; Transparency Options
-SetTransparency25:
-    transparency := 25
-    TrayTip, %AppName%, Transparency set to 25, 2, 1
-    Gosub, SaveSettings
-return
-SetTransparency64:
-    transparency := 64
-    TrayTip, %AppName%, Transparency set to 64, 2, 1
-    Gosub, SaveSettings
-return
-SetTransparency128:
-    transparency := 128
-    TrayTip, %AppName%, Transparency set to 128, 2, 1
-    Gosub, SaveSettings
-return
-SetTransparency179:
-    transparency := 179
-    TrayTip, %AppName%, Transparency set to 179, 2, 1
-    Gosub, SaveSettings
-return
-SetTransparency230:
-    transparency := 230
-    TrayTip, %AppName%, Transparency set to 230, 2, 1
-    Gosub, SaveSettings
-return
-SetTransparency255:
-    transparency := 255
-    TrayTip, %AppName%, Transparency set to 255 (Opaque), 2, 1
+; Transparency preset handler — one handler for the whole submenu. The value
+; is looked up from the preset table by menu item name (no per-item labels).
+SetTransparencyPreset:
+    For i, p in transparencyPresets
+        if (A_ThisMenuItem = p.name)
+            transparency := p.value
+    UpdateMenuChecks("TransparencyMenu", transparencyPresets, transparency)
+    TrayTip, %AppName%, Transparency set to %transparency%, 2, 1
     Gosub, SaveSettings
 return
 
-; Speed Options
-SetSpeed10:
-    checkInterval := 10
+; Response speed preset handler.
+SetSpeedPreset:
+    For i, p in speedPresets
+        if (A_ThisMenuItem = p.name)
+            checkInterval := p.value
     if (isEnabled) {
         SetTimer, CheckMouseOverPiP, Off
         SetTimer, CheckMouseOverPiP, %checkInterval%
     }
-    TrayTip, %AppName%, Speed set to 10ms, 2, 1
+    UpdateMenuChecks("SpeedMenu", speedPresets, checkInterval)
+    TrayTip, %AppName%, Speed set to %checkInterval%ms, 2, 1
     Gosub, SaveSettings
 return
-SetSpeed25:
-    checkInterval := 25
-     if (isEnabled) {
-        SetTimer, CheckMouseOverPiP, Off
-        SetTimer, CheckMouseOverPiP, %checkInterval%
+
+; Check the active preset and uncheck the rest (radio-button behavior).
+UpdateMenuChecks(menuName, presets, currentValue) {
+    For i, p in presets {
+        if (p.value = currentValue)
+            Menu, %menuName%, Check, % p.name
+        else
+            Menu, %menuName%, Uncheck, % p.name
     }
-    TrayTip, %AppName%, Speed set to 25ms, 2, 1
-    Gosub, SaveSettings
-return
-SetSpeed50:
-    checkInterval := 50
-     if (isEnabled) {
-        SetTimer, CheckMouseOverPiP, Off
-        SetTimer, CheckMouseOverPiP, %checkInterval%
-    }
-    TrayTip, %AppName%, Speed set to 50ms, 2, 1
-    Gosub, SaveSettings
-return
-SetSpeed100:
-    checkInterval := 100
-     if (isEnabled) {
-        SetTimer, CheckMouseOverPiP, Off
-        SetTimer, CheckMouseOverPiP, %checkInterval%
-    }
-    TrayTip, %AppName%, Speed set to 100ms, 2, 1
-    Gosub, SaveSettings
-return
-SetSpeed200:
-    checkInterval := 200
-     if (isEnabled) {
-        SetTimer, CheckMouseOverPiP, Off
-        SetTimer, CheckMouseOverPiP, %checkInterval%
-    }
-    TrayTip, %AppName%, Speed set to 200ms, 2, 1
-    Gosub, SaveSettings
-return
+}
 
 ; Browser Tools — each test handler scans only its target browser.
 TestChrome:
@@ -450,7 +453,13 @@ ResetCurrentPiP:
     if (pipWindow != "") {
         WinSet, Transparent, 255, ahk_id %pipWindow%
         WinSet, ExStyle, -0x20, ahk_id %pipWindow%
+        ; Clear the applied-state so the hover loop re-applies transparency on
+        ; the next tick instead of leaving the window stuck opaque.
+        pipState := ""
+        pipAppliedValue := -1
         TrayTip, %AppName%, Reset current PiP window, 2, 1
+    } else {
+        TrayTip, %AppName%, No PiP window currently detected, 2, 2
     }
 return
 
@@ -482,6 +491,8 @@ ResetAllSettings:
         if (isEnabled)
             SetTimer, CheckMouseOverPiP, %checkInterval%
         Gosub, UpdateMenuState
+        UpdateMenuChecks("TransparencyMenu", transparencyPresets, transparency)
+        UpdateMenuChecks("SpeedMenu", speedPresets, checkInterval)
         TrayTip, %AppName%, Settings reset, 2, 1
     }
 return
@@ -505,6 +516,11 @@ RunUpdateCheck(silentIfCurrent) {
     try {
         whr := ComObjCreate("MSXML2.XMLHTTP.6.0")
         whr.Open("GET", "https://api.github.com/repos/joganubaid/pip-controller-pro/releases/latest", false)
+        ; Bound the blocking call: Send() is synchronous and runs on the script's
+        ; only thread, so the XMLHTTP defaults (60s connect, 30s send/receive)
+        ; could freeze the tray and the transparency loop for minutes on a bad
+        ; network. Order: resolve, connect, send, receive — in milliseconds.
+        whr.SetTimeouts(3000, 5000, 5000, 10000)
         whr.SetRequestHeader("User-Agent", AppName . "/" . AppVersion)
         whr.SetRequestHeader("Accept", "application/vnd.github+json")
         whr.Send()
@@ -521,6 +537,14 @@ RunUpdateCheck(silentIfCurrent) {
             return
         }
         latest := m1
+        ; The regex above operates on raw response bytes, not parsed JSON, so a
+        ; MitM (TLS proxy, compromised CA) could stuff control chars into the
+        ; tag and have them rendered in the TrayTip. Validate before display.
+        if !RegExMatch(latest, "^\d+\.\d+\.\d+$") {
+            if (!silentIfCurrent)
+                TrayTip, %AppName%, Update check failed (unexpected tag format)., 4, 2
+            return
+        }
         cmp := CompareSemver(latest, AppVersion)
         if (cmp > 0) {
             TrayTip, %AppName% update available, v%latest% is out (you have v%AppVersion%).`nGet it at github.com/joganubaid/pip-controller-pro/releases/latest, 10, 1
@@ -556,6 +580,9 @@ CompareSemver(a, b) {
     Suspend, Toggle
     if (A_IsSuspended) {
         SetTimer, CheckMouseOverPiP, Off   ; Suspend pauses hotkeys but not timers — toggle the timer explicitly
+        RestorePiPWindow(lastPiPWindow)    ; don't leave the PiP stuck transparent + click-through
+        isHovering := false
+        pipState := ""
         TrayTip, %AppName%, Script Paused, 2
     } else {
         if (isEnabled)
@@ -566,5 +593,8 @@ return
 ^!x::Gosub, ExitApp
 
 ExitApp:
+    ; Restore the window we were controlling — otherwise exit strands it
+    ; transparent + click-through with no process left to recover it.
+    RestorePiPWindow(lastPiPWindow)
     Gosub, SaveSettings
     ExitApp

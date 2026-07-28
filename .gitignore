@@ -29,3 +29,6 @@ settings.ini
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Icon generator scratch output
+assets/icon-preview.png

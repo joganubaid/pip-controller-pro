@@ -17,7 +17,7 @@ $distDir = Join-Path $scriptDir "dist"
 $tempDir = Join-Path $scriptDir "temp"
 
 # Function to get AHK compiler path. Checks system install first, then a
-# repo-local portable install at .ahk/Compiler/ — handy for contributors who
+# repo-local portable install at .ahk/Compiler/ - handy for contributors who
 # don't want a system-wide AutoHotkey install.
 function Get-AhkCompiler {
     $candidates = @(
@@ -76,13 +76,18 @@ if ($needsRestore) {
 }
 
 try {
-    # Use $compilerArgs (not $args — that's a PowerShell automatic variable).
+    # Use $compilerArgs (not $args - that's a PowerShell automatic variable).
     $compilerArgs = "/in `"$ahkScript`" /out `"$ahkExe`""
     $base = Get-AhkBase -compilerPath $compiler
     if ($base) {
         $compilerArgs = "$compilerArgs /base `"$base`""
     } else {
-        Write-Host "No base .bin found next to Ahk2Exe — falling back to Ahk2Exe default." -ForegroundColor Yellow
+        Write-Host "No base .bin found next to Ahk2Exe - falling back to Ahk2Exe default." -ForegroundColor Yellow
+    }
+    # Custom icon: embedded into the exe (tray icon, taskbar, shortcuts).
+    $icon = Join-Path $scriptDir "assets\icon.ico"
+    if (Test-Path $icon) {
+        $compilerArgs = "$compilerArgs /icon `"$icon`""
     }
     $proc = Start-Process -FilePath $compiler -ArgumentList $compilerArgs -Wait -NoNewWindow -PassThru
     if ($proc.ExitCode -ne 0 -or -not (Test-Path $ahkExe)) {
@@ -108,7 +113,7 @@ if ($BuildPortable -or $BuildAll) {
     Copy-Item "$scriptDir\README.md" $portableDir -Force
 
     $zipPath = Join-Path $distDir "$AppName-v$Version-Portable.zip"
-    # ZipFile.CreateFromDirectory does not overwrite — delete first if rerunning.
+    # ZipFile.CreateFromDirectory does not overwrite - delete first if rerunning.
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::CreateFromDirectory($portableDir, $zipPath)
