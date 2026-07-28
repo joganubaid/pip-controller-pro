@@ -50,32 +50,95 @@ function New-PipBitmap([int]$size) {
     return $bmp
 }
 
-New-Item -ItemType Directory -Path assets -Force | Out-Null
-$sizes = 16, 32, 48, 256
-$pngs = @()
-foreach ($sz in $sizes) {
-    $b = New-PipBitmap $sz
-    $ms = New-Object System.IO.MemoryStream
-    $b.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
-    $pngs += ,@{ size = $sz; data = $ms.ToArray() }
-    if ($sz -eq 256) { $b.Save("assets\icon-preview.png", [System.Drawing.Imaging.ImageFormat]::Png) }
-    $b.Dispose()
+# Extract bottom-up BGRA XOR bytes + fully-opaque AND mask from a Bitmap.
+function Get-IconImageBytes([System.Drawing.Bitmap]$bmp) {
+    $w = $bmp.Width
+    $h = $bmp.Height
+    $rect = New-Object System.Drawing.Rectangle 0, 0, $w, $h
+    $fmt = [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+    $data = $bmp.LockBits($rect, [System.Drawing.Imaging.ImageLockMode]::ReadOnly, $fmt)
+    $stride = $data.Stride
+    $src = New-Object byte[] ($stride * $h)
+    [System.Runtime.InteropServices.Marshal]::Copy($data.Scan0, $src, 0, $src.Length)
+    $bmp.UnlockBits($data)
+
+    # ICO XOR bitmap is bottom-up, no row padding when width*4 is multiple of 4 (always true).
+    $xor = New-Object byte[] ($w * $h * 4)
+    for ($row = 0; $row -lt $h; $row++) {
+        $srcRow = ($h - 1 - $row) * $stride
+        $dstRow = $row * $w * 4
+        for ($col = 0; $col -lt $w; $col++) {
+            $si = $srcRow + $col * 4
+            $di = $dstRow + $col * 4
+            # src is ARGB; ICO 32bpp BMP expects BGRA
+            $xor[$di + 0] = $src[$si + 2]  # B
+            $xor[$di + 1] = $src[$si + 1]  # G
+            $xor[$di + 2] = $src[$si + 0]  # R
+            $xor[$di + 3] = $src[$si + 3]  # A
+        }
+    }
+
+    # 1bpp AND mask, bottom-up, row size rounded up to 4 bytes. Fully opaque = all zeros.
+    $andRowBytes = [math]::Ceiling($w / 32.0) * 4
+    $and = New-Object byte[] ($andRowBytes * $h)
+
+    return @{ xor = $xor; and = $and; andRowBytes = $andRowBytes }
 }
 
-# Pack the PNGs into a multi-size .ico (PNG-compressed entries, Vista+)
+New-Item -ItemType Directory -Path assets -Force | Out-Null
+$sizes = 16, 32, 48, 256
+$images = @()
+foreach ($sz in $sizes) {
+    $bmp = New-PipBitmap $sz
+    $img = Get-IconImageBytes $bmp
+    if ($sz -eq 256) {
+        $bmp.Save("assets\icon-preview.png", [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    $bmp.Dispose()
+
+    # BMP-based ICO image: BITMAPINFOHEADER + XOR + AND
+    $header = [System.Collections.ArrayList]::new()
+    [void]$header.AddRange([BitConverter]::GetBytes([uint32]40))        # biSize
+    [void]$header.AddRange([BitConverter]::GetBytes([int32]$sz))         # biWidth
+    [void]$header.AddRange([BitConverter]::GetBytes([int32]($sz * 2)))   # biHeight (XOR + AND)
+    [void]$header.AddRange([BitConverter]::GetBytes([uint16]1))          # biPlanes
+    [void]$header.AddRange([BitConverter]::GetBytes([uint16]32))         # biBitCount
+    [void]$header.AddRange([BitConverter]::GetBytes([uint32]0))          # biCompression
+    [void]$header.AddRange([BitConverter]::GetBytes([uint32]0))          # biSizeImage
+    [void]$header.AddRange([BitConverter]::GetBytes([int32]0))           # biXPelsPerMeter
+    [void]$header.AddRange([BitConverter]::GetBytes([int32]0))           # biYPelsPerMeter
+    [void]$header.AddRange([BitConverter]::GetBytes([uint32]0))          # biClrUsed
+    [void]$header.AddRange([BitConverter]::GetBytes([uint32]0))          # biClrImportant
+
+    $data = [System.Collections.ArrayList]::new()
+    [void]$data.AddRange($header)
+    [void]$data.AddRange($img.xor)
+    [void]$data.AddRange($img.and)
+
+    $images += ,@{ size = $sz; data = [byte[]]$data.ToArray() }
+}
+
+# Pack ICO directory + images
 $fs = [System.IO.File]::Create("assets\icon.ico")
 $bw = New-Object System.IO.BinaryWriter $fs
-$bw.Write([uint16]0); $bw.Write([uint16]1); $bw.Write([uint16]$pngs.Count)
-$offset = 6 + 16 * $pngs.Count
-foreach ($p in $pngs) {
-    $szByte = [byte]($p.size -band 0xFF)   # 256 wraps to 0 per the ICO spec
-    $bw.Write($szByte); $bw.Write($szByte)
-    $bw.Write([byte]0); $bw.Write([byte]0)
-    $bw.Write([uint16]1); $bw.Write([uint16]32)
-    $bw.Write([uint32]$p.data.Length)
-    $bw.Write([uint32]$offset)
-    $offset += $p.data.Length
+$bw.Write([uint16]0)                        # Reserved
+$bw.Write([uint16]1)                        # Type: icon
+$bw.Write([uint16]$images.Count)            # Count
+$offset = 6 + 16 * $images.Count
+foreach ($img in $images) {
+    $szByte = [byte]($img.size -band 0xFF)  # 256 wraps to 0
+    $bw.Write($szByte)                      # Width
+    $bw.Write($szByte)                      # Height
+    $bw.Write([byte]0)                      # Colors
+    $bw.Write([byte]0)                      # Reserved
+    $bw.Write([uint16]1)                    # Planes
+    $bw.Write([uint16]32)                   # BitCount
+    $bw.Write([uint32]$img.data.Length)     # BytesInRes
+    $bw.Write([uint32]$offset)              # ImageOffset
+    $offset += $img.data.Length
 }
-foreach ($p in $pngs) { $bw.Write($p.data) }
+foreach ($img in $images) {
+    $bw.Write($img.data)
+}
 $bw.Close(); $fs.Close()
-Write-Host "assets\icon.ico + assets\icon-preview.png written"
+Write-Host "assets\icon.ico + assets\icon-preview.png written (BMP-based, $([String]::Join('/', $sizes))px)"
